@@ -1,0 +1,19 @@
+{
+  "name": "angry-uma",
+  "version": "1.0.0",
+  "description": "愤怒的马娘 (Angry Uma) - 基于 Matter.js 与 HTML5 Canvas 的弹射物理游戏",
+  "main": "index.html",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "serve": "node server.js"
+  },
+  "keywords": [
+    "game",
+    "matter-js",
+    "canvas",
+    "umamusume"
+  ],
+  "author": "MatikaneMeika",
+  "license": "MIT"
+}
