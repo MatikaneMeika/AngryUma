@@ -266,18 +266,23 @@ function sfxT(name){const n=performance.now();if(AU.last._g&&n-AU.last._g<80)ret
 
 /* ================= 常量定义 ================= */
 const GROUND_Y=560;
-const SLING={x:300,anchorY:445,max:95,k:0.235};
+const SLING={x:300,anchorY:445,lift:14,max:95,k:0.235};
+/* 马娘在弹弓上的实际落点：比物理锚点略高一点，点击/拖拽/落座/发射都以这里为准 */
+const SLING_REST={x:SLING.x,y:SLING.anchorY-SLING.lift};
 const MATS={
   wood:{hp:90,density:.0022,fill:'#d29a5b',edge:'#8a5a2b',score:500},
   glass:{hp:45,density:.0016,fill:'rgba(176,226,248,.55)',edge:'rgba(110,175,208,.95)',score:500},
   stone:{hp:200,density:.0035,fill:'#b7b7b0',edge:'#76766e',score:500}
 };
+/* r=贴图美术半径（只影响绘制）；hit=碰撞体积半径（贴合贴图视觉轮廓，密度按半径平方反比折算，质量保持不变） */
 const BIRDS={
-  red:{r:22,density:.0042,power:1,matMult:{wood:1,glass:1,stone:.8},name:'帝王'},
-  chuck:{r:21,density:.0042,power:1,matMult:{wood:3,glass:1,stone:.5},name:'米浴'},
-  blue:{r:16,density:.0038,power:.55,matMult:{wood:.6,glass:3,stone:.3},name:'内恰'},
-  bomb:{r:25,density:.0055,power:1.15,matMult:{wood:1.5,glass:1.2,stone:2.2},name:'波旁'}
+  red:{r:22,hit:23,density:.0042,power:1,matMult:{wood:1,glass:1,stone:.8},name:'帝王'},
+  chuck:{r:21,hit:23,density:.0042,power:1,matMult:{wood:3,glass:1,stone:.5},name:'米浴'},
+  blue:{r:16,hit:18,density:.0038,power:.55,matMult:{wood:.6,glass:3,stone:.3},name:'内恰'},
+  bomb:{r:25,hit:26,density:.0055,power:1.15,matMult:{wood:1.5,glass:1.2,stone:2.2},name:'波旁'}
 };
+/* 奇宝猪的贴图/碰撞体积（普通猪与国王猪的贴图同宽，碰撞体积按各自贴图轮廓给出） */
+const PIG={r:26,hit:29,density:.0022,king:{r:50,hit:57,density:.002}};
 const THEMES=[
   {name:'特雷森草地',sky:['#79cdf4','#eaf8fd'],hillFar:'#c4e9b0',hillNear:'#a2d98b',ground:'#8a5a33',grass:'#6fbf44',grass2:'#57a835',cloud:'rgba(255,255,255,.92)',mid:'bush',sun:{x:.78,y:-210,r:56,c:'#ffdf6b',glow:'rgba(255,235,150,.28)'}},
   {name:'黄昏训练沙地',sky:['#f29a52','#ffe4ad'],hillFar:'#f0cd98',hillNear:'#e5b478',ground:'#c08345',grass:'#dca75f',grass2:'#c78c42',cloud:'rgba(255,240,215,.75)',mid:'cactus',sun:{x:.28,y:20,r:88,c:'#ff8a3d',glow:'rgba(255,150,70,.3)'}},
@@ -342,7 +347,7 @@ const G={state:'menu',level:0,phase:'boot',t:0,score:0,dispScore:0,worldW:1700,t
   queue:[],slingBird:null,flock:[],pigs:[],blocks:[],
   dots:[],particles:[],floaters:[],damageBuf:new Map(),
   hop:null,flightT:0,stillT:0,waitT:0,calmT:0,clearT:0,loseT:0,introT:0,introFrom:0,
-  uiShown:false,everLaunched:false,userPanT:0,userZoom:1,shake:0,flash:0,
+  uiShown:false,winShown:false,everLaunched:false,userPanT:0,userZoom:1,shake:0,flash:0,
   slingSnap:0,slingRel:null,scene:null,
   cam:{x:520,y:100,z:1}};
 let levelDef=null;
@@ -378,16 +383,18 @@ function makeBlock(bd){
   body.gd=ent;G.blocks.push(ent);Composite.add(world,body);
 }
 function makePig(pd){
-  const king=pd.t==='k',r=king?50:26;
-  const body=Bodies.circle(pd.x,pd.y,r,{density:king?.002:.0022,friction:.5,restitution:.15});
-  const ent={kind:'pig',type:pd.t,r,body,dead:false,hp:king?230:65,maxHp:king?230:65,hurt:false,seed:rand(1,999),blinkSeed:rand(0,300)};
+  const king=pd.t==='k',g=king?PIG.king:PIG,r=g.r,hr=g.hit;
+  // 身体略向上放 (hr-r)，让贴图底边（脚底）仍在原来的高度
+  const body=Bodies.circle(pd.x,pd.y-(hr-r),hr,{density:g.density*(r/hr)*(r/hr),friction:.5,restitution:.15});
+  const ent={kind:'pig',type:pd.t,r,hitR:hr,body,dead:false,hp:king?230:65,maxHp:king?230:65,hurt:false,seed:rand(1,999),blinkSeed:rand(0,300)};
   body.gd=ent;G.pigs.push(ent);Composite.add(world,body);
 }
 function spawnBirdBody(type,x,y,vx,vy,rOverride){
   const d=BIRDS[type];
-  const body=Bodies.circle(x,y,rOverride||d.r,{density:d.density,friction:.5,restitution:.35,frictionAir:.0008});
+  const r=rOverride||d.r,hr=r*(d.hit/d.r);
+  const body=Bodies.circle(x,y,hr,{density:d.density*(r/hr)*(r/hr),friction:.5,restitution:.35,frictionAir:.0008});
   Body.setVelocity(body,{x:vx,y:vy});Body.setAngularVelocity(body,.04);
-  const ent={kind:'bird',type,body,r:rOverride||d.r,power:d.power,matMult:d.matMult,skillUsed:type==='red',fuse:-1,dead:false,dashT:0};
+  const ent={kind:'bird',type,body,r,hitR:hr,power:d.power,matMult:d.matMult,skillUsed:type==='red',fuse:-1,dead:false,dashT:0};
   body.gd=ent;G.flock.push(ent);Composite.add(world,body);return ent;
 }
 function removeBird(ent){if(ent.dead)return;ent.dead=true;try{Composite.remove(world,ent.body)}catch(e){}}
@@ -451,6 +458,7 @@ function destroyBlock(ent){
   fx('shard',p.x,p.y,10,{col:MATS[ent.mat].edge,s:rand(6,13)});
   addScore(500,p);sfx(ent.mat==='glass'?'brkG':ent.mat==='stone'?'brkS':'brkW');
 }
+function allPigsDead(){return G.pigs.length>0&&G.pigs.every(q=>q.dead)}
 function killPig(ent){
   ent.dead=true;try{Composite.remove(world,ent.body)}catch(e){}
   const p=ent.body.position,king=ent.type==='k';
@@ -458,7 +466,16 @@ function killPig(ent){
   fx('star',p.x,p.y-10,king?5:4,{s:7});
   if(king)fx('shard',p.x,p.y-ent.r,6,{col:'#f2c34a',s:9});
   addScore(king?10000:5000,p);sfx('pigDie');
-  if(G.pigs.every(q=>q.dead))beginClear();
+  if(allPigsDead())beginClear();
+}
+/* 被击飞出场地（镜头永远看不到也打不到）的猪直接算阵亡，避免卡关 */
+function cullOutOfBounds(){
+  const x0=-140,x1=G.worldW+140;
+  for(const ent of G.pigs){
+    if(ent.dead)continue;
+    const p=ent.body.position;
+    if(p.x<x0||p.x>x1||p.y>1250)killPig(ent);
+  }
 }
 
 /* ================= 爆炸 / 技能 ================= */
@@ -514,7 +531,7 @@ function createLevel(i){
   for(const b of L.blocks)makeBlock(b);
   for(const p of L.pigs)makePig(p);
   G.queue=[...L.birds];G.slingBird=null;G.hop=null;
-  G.score=0;G.dispScore=0;G.uiShown=false;G.slingSnap=0;G.shake=0;G.flash=0;
+  G.score=0;G.dispScore=0;G.uiShown=false;G.winShown=false;G.slingSnap=0;G.shake=0;G.flash=0;
   createScenery(L.world,L.w);
   for(let k=0;k<25;k++)Engine.update(engine,1000/60); // 预沉降稳定结构
   // 开场镜头扫视
@@ -555,15 +572,15 @@ function endFlight(){
   G.phase='waitClear';G.waitT=0;G.calmT=0;
 }
 function beginClear(){
-  if(['aim','loading','flight','waitClear','intro','losing'].includes(G.phase)&&!G.uiShown){
-    G.phase='cleared';G.clearT=0;
-  }
+  // 猪全部阵亡时无论处于哪个阶段都必须通关（连已经弹出的“失败”面板也要改判），避免清空猪后仍显示失败
+  if(G.winShown||G.phase==='cleared')return;
+  G.phase='cleared';G.clearT=0;
 }
 function addScore(n,pos){G.score+=n;G.floaters.push({x:pos.x,y:pos.y-34,txt:'+'+n,t:0});}
 
 /* ================= 胜负结算 ================= */
 function showWin(){
-  G.phase='ui';G.uiShown=true;
+  G.phase='ui';G.uiShown=true;G.winShown=true;
   const alive=G.flock.filter(e=>!e.dead).length;
   const left=G.queue.length+(G.slingBird?1:0)+alive;
   const bonus=left*10000,total=G.score+bonus;
@@ -594,6 +611,8 @@ const LOSE_TIPS=[
   '瞄准结构的支柱支撑点，一击全倒！'
 ];
 function showLose(){
+  // 保险：猪已全部阵亡就直接改判通关（后台物理仍在跑，最后一只猪可能在失败面板弹出后才被砸死）
+  if(allPigsDead()){beginClear();return}
   G.phase='ui';G.uiShown=true;
   $('#loseTip').textContent=LOSE_TIPS[Math.floor(Math.random()*LOSE_TIPS.length)];
   hidePanels();$('#lose').classList.remove('hidden');$('#hud').classList.remove('hidden');
@@ -656,10 +675,13 @@ function step(){
     if(!G.flock.some(e=>!e.dead)||G.stillT>95||G.flightT>8)endFlight();
   }
   processDamage();
+  // 通关保险：清理被击飞出场的猪，并在猪全部阵亡时无条件进入结算
+  cullOutOfBounds();
+  if(allPigsDead()&&!G.winShown)beginClear();
   // 装填跳跃
   if(G.phase==='loading'&&G.hop){
     G.hop.t+=1/60*1.9;
-    if(G.hop.t>=1){G.slingBird={type:G.hop.type,x:SLING.x,y:SLING.anchorY,drag:null};G.hop=null;G.phase='aim';updateHint()}
+    if(G.hop.t>=1){G.slingBird={type:G.hop.type,x:SLING_REST.x,y:SLING_REST.y,drag:null};G.hop=null;G.phase='aim';updateHint()}
   }
   // 等待世界安定
   if(G.phase==='waitClear'){
@@ -669,7 +691,7 @@ function step(){
       if(Math.hypot(bd.velocity.x,bd.velocity.y)>.5){calm=false;break}}
     if(calm)G.calmT+=1/60;else G.calmT=0;
     if(G.calmT>1.2||G.waitT>4.5){
-      if(G.pigs.every(p=>p.dead))beginClear();
+      if(allPigsDead())beginClear();
       else if(G.queue.length>0)loadNextBird();
       else{G.phase='losing';G.loseT=0}
     }
@@ -678,7 +700,7 @@ function step(){
     G.introT+=1/60;
     if(G.introT>=1.25){G.phase='loading';loadNextBird()}
   }
-  if(G.phase==='cleared'){G.clearT+=1/60;if(G.clearT>1.4&&!G.uiShown)showWin()}
+  if(G.phase==='cleared'){G.clearT+=1/60;if(G.clearT>1.4&&!G.winShown)showWin()}
   if(G.phase==='losing'){G.loseT+=1/60;if(G.loseT>0.8&&!G.uiShown)showLose()}
   updateParticles();
   updateCamera();
@@ -742,6 +764,8 @@ function clampCam(){
 
 function updateCamera(){
   G.cam.z = camZoom();
+  // 拖拽弹弓期间锁死镜头：镜头一平移，世界坐标不变的马娘就会从手指/鼠标下滑走
+  if(G.state==='playing'&&ptr.down&&ptr.mode==='sling'&&G.slingBird)return;
   const vw = cw / G.cam.z, vh = ch / G.cam.z;
   const aim = getAimTarget();
 
@@ -776,8 +800,10 @@ function updateCamera(){
   if(G.userPanT > 0){
     G.userPanT--;
   }else{
-    G.cam.x = lerp(G.cam.x, tx, 0.08);
-    G.cam.y = lerp(G.cam.y, ty, 0.08);
+    // 瞄准/装填阶段直接归位，不缓慢平移，避免镜头回位把马娘从手底下"拖走"
+    const k=(G.phase==='aim'||G.phase==='loading')?1:.08;
+    G.cam.x = lerp(G.cam.x, tx, k);
+    G.cam.y = lerp(G.cam.y, ty, k);
   }
   clampCam();
 }
@@ -916,6 +942,7 @@ function drawBird(type,x,y,ang,r,opt){
 
 function drawPig(ent){
   const b=ent.body,r=ent.r,hurt=ent.hurt,king=ent.type==='k';
+  const lift=ent.hitR-ent.r; // 碰撞体比贴图大，绘制时把贴图落回原位（脚底仍贴地面）
   ctx.save();
   ctx.translate(b.position.x,b.position.y);
   ctx.rotate(b.angle);
@@ -925,11 +952,11 @@ function drawPig(ent){
     if(king){
       // 国王奇宝猪: bounds=(376, 34, w=569, h=565)
       const dw=r*2.52,dh=dw*(565/569);
-      ctx.drawImage(img,376,34,569,565,-dw*0.49,-dh*0.58,dw,dh);
+      ctx.drawImage(img,376,34,569,565,-dw*0.49,-dh*0.58+lift,dw,dh);
     }else{
       // 普通奇宝猪: bounds=(376, 158, w=569, h=441)
       const dw=r*2.52,dh=dw*(441/569);
-      ctx.drawImage(img,376,158,569,441,-dw*0.49,-dh*0.52,dw,dh);
+      ctx.drawImage(img,376,158,569,441,-dw*0.49,-dh*0.52+lift,dw,dh);
     }
   }else{
     ctx.fillStyle=hurt?'#e89f9f':'#f5a7a7';
@@ -978,36 +1005,64 @@ function drawBlock(ent){
 }
 
 /* ---------- 弹弓 ---------- */
-function slingWood(x1,y1,x2,y2,w){
-  ctx.strokeStyle='#7a4a22';ctx.lineWidth=w;ctx.lineCap='round';
+/* 木叉顶端两个绑皮筋的位置（左右各一，马娘正好落在中间的口袋里） */
+const SLING_TIP={l:{x:SLING_REST.x-32,y:SLING_REST.y+4},r:{x:SLING_REST.x+32,y:SLING_REST.y+4}};
+const SLING_KNEE=GROUND_Y-56-SLING.lift;
+function slingLimb(x1,y1,x2,y2,w){
+  ctx.lineCap='round';
+  ctx.strokeStyle='#5a3416';ctx.lineWidth=w+4;
   ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
-  ctx.strokeStyle='#5a3416';ctx.lineWidth=w*.32;
-  ctx.beginPath();ctx.moveTo(x1-w*.22,y1);ctx.lineTo(x2-w*.22,y2);ctx.stroke();
+  ctx.strokeStyle='#8a5a2b';ctx.lineWidth=w;
+  ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+  ctx.strokeStyle='rgba(255,246,225,.22)';ctx.lineWidth=Math.max(2,w*.26);
+  ctx.beginPath();ctx.moveTo(x1-w*.24,y1);ctx.lineTo(x2-w*.24,y2);ctx.stroke();
 }
 function bandPoint(){
   if(G.slingBird&&G.slingBird.drag){
     const d=G.slingBird.drag;
-    return{x:SLING.x+d.x,y:SLING.anchorY+d.y,taut:true};
+    return{x:SLING_REST.x+d.x,y:SLING_REST.y+d.y,taut:true};
   }
   if(G.slingSnap>0&&G.slingRel){
-    return{x:lerp(SLING.x,G.slingRel.x,G.slingSnap*.45),y:lerp(SLING.anchorY,G.slingRel.y,G.slingSnap*.45),taut:true};
+    return{x:lerp(SLING_REST.x,G.slingRel.x,G.slingSnap*.45),y:lerp(SLING_REST.y,G.slingRel.y,G.slingSnap*.45),taut:true};
   }
   return null;
 }
+/* 后层：木架（立柱 + 左右叉）与后侧皮筋、皮兜，全部画在马娘后面 */
 function drawSlingBack(){
-  slingWood(SLING.x,GROUND_Y+8,SLING.x,SLING.anchorY+26,17);
-  slingWood(SLING.x-14,GROUND_Y+4,SLING.x-8,SLING.anchorY,12);
+  slingLimb(SLING.x,GROUND_Y+16,SLING.x,SLING_KNEE,24);
+  slingLimb(SLING.x-2,SLING_KNEE+6,SLING_TIP.l.x,SLING_TIP.l.y,15);
+  slingLimb(SLING.x+2,SLING_KNEE+6,SLING_TIP.r.x,SLING_TIP.r.y,15);
   const bp=bandPoint();
-  if(bp){ctx.strokeStyle='#4a3018';ctx.lineWidth=8;ctx.lineCap='round';
-    ctx.beginPath();ctx.moveTo(SLING.x-10,SLING.anchorY+2);ctx.lineTo(bp.x-3,bp.y+2);ctx.stroke();}
+  if(bp){
+    ctx.strokeStyle='#3b2214';ctx.lineWidth=7;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(SLING_TIP.l.x,SLING_TIP.l.y);ctx.lineTo(bp.x-2,bp.y+2);ctx.stroke();
+    ctx.save();
+    ctx.translate(bp.x,bp.y+3);ctx.rotate(Math.atan2(SLING_REST.y-bp.y,SLING_REST.x-bp.x)+Math.PI/2);
+    ctx.fillStyle='#4a2a18';rr(-15,-14,30,28,7);ctx.fill();
+    ctx.fillStyle='rgba(0,0,0,.22)';rr(-15,-14,30,9,6);ctx.fill();
+    ctx.restore();
+  }else{
+    // 空载时的皮兜（自然垂在两个叉中间）
+    ctx.save();ctx.translate(SLING_REST.x,SLING_REST.y+30);
+    ctx.fillStyle='#4a2a18';rr(-14,-13,28,26,7);ctx.fill();
+    ctx.fillStyle='rgba(0,0,0,.22)';rr(-14,-13,28,8,6);ctx.fill();
+    ctx.restore();
+  }
 }
+/* 前层：只画前侧皮筋，避免木叉/皮筋挡住马娘 */
 function drawSlingFront(){
   const bp=bandPoint();
-  if(bp){ctx.strokeStyle='#3a250f';ctx.lineWidth=9;ctx.lineCap='round';
-    ctx.beginPath();ctx.moveTo(SLING.x+10,SLING.anchorY+2);ctx.lineTo(bp.x+3,bp.y+2);ctx.stroke();}
-  else{ctx.strokeStyle='#3a250f';ctx.lineWidth=7;ctx.lineCap='round';
-    ctx.beginPath();ctx.moveTo(SLING.x-10,SLING.anchorY+2);ctx.quadraticCurveTo(SLING.x,SLING.anchorY+30,SLING.x+10,SLING.anchorY+2);ctx.stroke();}
-  slingWood(SLING.x+14,GROUND_Y+4,SLING.x+8,SLING.anchorY,12);
+  ctx.lineCap='round';
+  if(bp){
+    ctx.strokeStyle='#2b160c';ctx.lineWidth=8;
+    ctx.beginPath();ctx.moveTo(SLING_TIP.r.x,SLING_TIP.r.y);ctx.lineTo(bp.x+2,bp.y+2);ctx.stroke();
+    ctx.strokeStyle='rgba(255,255,255,.12)';ctx.lineWidth=2.5;
+    ctx.beginPath();ctx.moveTo(SLING_TIP.r.x,SLING_TIP.r.y);ctx.lineTo(bp.x+2,bp.y+2);ctx.stroke();
+  }else{
+    ctx.strokeStyle='#2b160c';ctx.lineWidth=5.5;
+    ctx.beginPath();ctx.moveTo(SLING_TIP.l.x,SLING_TIP.l.y);
+    ctx.quadraticCurveTo(SLING_REST.x,SLING_REST.y+40,SLING_TIP.r.x,SLING_TIP.r.y);ctx.stroke();
+  }
 }
 
 /* ---------- 游戏世界绘制 ---------- */
@@ -1029,10 +1084,10 @@ function drawGame(){
   // 弹弓上的马娘
   if(G.slingBird){
     const sb=G.slingBird;
-    let x=SLING.x,y=SLING.anchorY,ang=Math.sin(G.t*.05)*.05;
+    let x=SLING_REST.x,y=SLING_REST.y,ang=Math.sin(G.t*.05)*.05;
     if(sb.drag){
-      x=SLING.x+sb.drag.x;y=SLING.anchorY+sb.drag.y;
-      ang=Math.atan2(SLING.anchorY-y,SLING.x-x);
+      x=SLING_REST.x+sb.drag.x;y=SLING_REST.y+sb.drag.y;
+      ang=Math.atan2(SLING_REST.y-y,SLING_REST.x-x);
     }
     drawBird(sb.type,x,y,ang,BIRDS[sb.type].r);
   }
@@ -1045,7 +1100,7 @@ function drawGame(){
   // 装填跳跃动画
   if(G.hop){
     const hp=G.hop,t=Math.min(1,hp.t);
-    const x=lerp(hp.fx,SLING.x,t),y=lerp(hp.fy,SLING.anchorY,t)-Math.sin(t*Math.PI)*95;
+    const x=lerp(hp.fx,SLING_REST.x,t),y=lerp(hp.fy,SLING_REST.y,t)-Math.sin(t*Math.PI)*95;
     drawBird(hp.type,x,y,0,BIRDS[hp.type].r);
   }
   drawParticlesWorld();
@@ -1060,9 +1115,9 @@ function drawGame(){
   // 第一关教学手势
   if(G.state==='playing'&&G.level===0&&G.phase==='aim'&&!G.everLaunched&&!G.slingBird?.drag){
     const t=(G.t%110)/110,e=t<.5?t*2:(1-t)*2,ee=e*e*(3-2*e);
-    const hx=SLING.x-8-ee*72,hy=SLING.anchorY+6+ee*52;
+    const hx=SLING_REST.x-8-ee*72,hy=SLING_REST.y+6+ee*52;
     ctx.strokeStyle='rgba(255,255,255,.5)';ctx.lineWidth=2.5;ctx.setLineDash([7,7]);
-    ctx.beginPath();ctx.moveTo(SLING.x-4,SLING.anchorY+4);ctx.lineTo(SLING.x-76,SLING.anchorY+56);ctx.stroke();ctx.setLineDash([]);
+    ctx.beginPath();ctx.moveTo(SLING_REST.x-4,SLING_REST.y+4);ctx.lineTo(SLING_REST.x-76,SLING_REST.y+56);ctx.stroke();ctx.setLineDash([]);
     ctx.globalAlpha=.9;
     ctx.fillStyle='rgba(255,255,255,.35)';ctx.beginPath();ctx.arc(hx,hy,20,0,TAU);ctx.fill();
     ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(hx,hy,11,0,TAU);ctx.fill();
@@ -1100,7 +1155,7 @@ function drawParticlesWorld(){
 }
 function drawMenuScene(){
   drawSlingBack();
-  drawBird('red',SLING.x,SLING.anchorY,0,24);
+  drawBird('red',SLING_REST.x,SLING_REST.y,0,24);
   drawSlingFront();
   const q=['chuck','blue','bomb'];
   for(let i=0;i<q.length;i++){
@@ -1149,15 +1204,21 @@ cv.addEventListener('pointerdown',e=>{
   }
   if(ptr.down)return;
   const w=toWorld(e.clientX,e.clientY);
-  ptr={down:true,id:e.pointerId,mode:'pan',lx:e.clientX,ly:e.clientY,sx:e.clientX,sy:e.clientY,t0:performance.now(),lastStretch:0};
-  if(G.phase==='aim'&&G.slingBird&&dist(w.x,w.y,SLING.x,SLING.anchorY)<140)ptr.mode='sling';
+  ptr={down:true,id:e.pointerId,mode:'pan',lx:e.clientX,ly:e.clientY,sx:e.clientX,sy:e.clientY,t0:performance.now(),lastStretch:0,grab:null};
+  if(G.phase==='aim'&&G.slingBird&&dist(w.x,w.y,SLING_REST.x,SLING_REST.y)<140){
+    ptr.mode='sling';
+    // 抓取偏移：按在马娘身上时不瞬移；按在木叉范围内时才把马娘吸附到指针
+    const d0=G.slingBird.drag||{x:0,y:0},cx=SLING_REST.x+d0.x,cy=SLING_REST.y+d0.y;
+    ptr.grab=dist(w.x,w.y,cx,cy)<48?{x:w.x-cx,y:w.y-cy}:{x:0,y:0};
+  }
   try{cv.setPointerCapture(e.pointerId)}catch(err){}
 });
 cv.addEventListener('pointermove',e=>{
   if(!ptr.down||e.pointerId!==ptr.id)return;
   if(ptr.mode==='sling'&&G.slingBird){
     const w=toWorld(e.clientX,e.clientY);
-    let dx=w.x-SLING.x,dy=w.y-SLING.anchorY;
+    const g=ptr.grab||{x:0,y:0};
+    let dx=w.x-g.x-SLING_REST.x,dy=w.y-g.y-SLING_REST.y;
     const d=Math.hypot(dx,dy);
     if(d>SLING.max){dx*=SLING.max/d;dy*=SLING.max/d}
     G.slingBird.drag={x:dx,y:dy};
@@ -1172,12 +1233,13 @@ cv.addEventListener('pointermove',e=>{
 });
 function pointerEnd(e){
   if(!ptr.down||e.pointerId!==ptr.id)return;
-  ptr.down=false;
-  if(ptr.mode==='sling'&&G.slingBird){
+  const wasSling=ptr.mode==='sling';
+  ptr.down=false;ptr.mode='';
+  if(wasSling&&G.slingBird){
     const d=G.slingBird.drag?Math.hypot(G.slingBird.drag.x,G.slingBird.drag.y):0;
     if(d<16){G.slingBird.drag=null}
     else{
-      const p={x:SLING.x+G.slingBird.drag.x,y:SLING.anchorY+G.slingBird.drag.y};
+      const p={x:SLING_REST.x+G.slingBird.drag.x,y:SLING_REST.y+G.slingBird.drag.y};
       launch(p,-G.slingBird.drag.x*SLING.k,-G.slingBird.drag.y*SLING.k);
     }
   }else{
@@ -1185,6 +1247,8 @@ function pointerEnd(e){
     const dt=performance.now()-ptr.t0;
     const mv=dist(e.clientX,e.clientY,ptr.sx,ptr.sy);
     if(G.phase==='flight'&&dt<320&&mv<12)triggerSkill();
+    // 平移视口结束后立刻让镜头归位，避免镜头缓慢平移把马娘从手底下带走
+    G.userPanT=0;
   }
 }
 cv.addEventListener('pointerup',pointerEnd);
