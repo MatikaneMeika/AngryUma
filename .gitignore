@@ -1,0 +1,6 @@
+.mimosa/
+node_modules/
+.zcode/
+.DS_Store
+Thumbs.db
+*.log
