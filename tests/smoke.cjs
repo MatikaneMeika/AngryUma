@@ -15,6 +15,7 @@ function element(id){
     classList:{_s:new Set(),add(c){this._s.add(c)},remove(c){this._s.delete(c)},contains(c){return this._s.has(c)}},
     addEventListener(type,fn){listeners.set(id+'|'+type,fn)},appendChild(){},remove(){},
     querySelectorAll(){return [element(),element(),element()]},getContext(){return context},
+    getBoundingClientRect(){return {left:0,top:0,width:1280,height:720}},
     setPointerCapture(){},dispatchEvent(){return true}};
 }
 const sandbox={console,Math,Map,Set,Promise,performance,innerWidth:1280,innerHeight:720,devicePixelRatio:1,
@@ -110,21 +111,20 @@ vm.createContext(sandbox);vm.runInContext(script,sandbox);
  if(maxOff>0.5)throw Error('Uma drifts from pointer after pan: '+maxOff);
  if(Math.hypot(G.cam.x-cam0.x,G.cam.y-cam0.y)>0.5)throw Error('Camera moved while dragging');
  fire('pointermove',b.x,b.y,3);fire('pointerup',b.x,b.y,3);
- // 按在马娘"上半身/头部"（偏离圆心）时，马娘圆心也必须立刻对准指针，不得停在手指下方/上方
- startLevel(0);
- for(let i=0;i<200;i++)step();
- G.queue=[];
- for(const hit of [{dx:0,dy:-22,label:'head'},{dx:0,dy:14,label:'body'},{dx:-18,dy:-14,label:'left-up'}]){
-   const p=w2s(SLING_REST.x+hit.dx,SLING_REST.y+hit.dy);
-   fire('pointerdown',p.x,p.y,7);
-   fire('pointermove',p.x+2,p.y+2,7);
-   const w=toWorld(p.x+2,p.y+2),dg=G.slingBird.drag;
-   const dx=dg.x-(w.x-SLING_REST.x),dy=dg.y-(w.y-SLING_REST.y);
-   if(Math.hypot(dx,dy)>0.01)throw Error('Press on '+hit.label+' left the uma off the pointer: '+Math.hypot(dx,dy).toFixed(2));
-   // 按在马娘身上轻点（不移动）不得误发射
-   fire('pointerup',p.x+2,p.y+2,7);
-   if(G.phase!=='aim'||!G.slingBird)throw Error('Tap on '+hit.label+' fired the uma accidentally: '+G.phase);
- }
+  // 按在马娘身上拖拽必须以触碰位置为基准平滑拉动，不得出现突变偏置与误发射
+  startLevel(0);
+  for(let i=0;i<200;i++)step();
+  G.queue=[];
+  for(const hit of [{dx:0,dy:-22,label:'head'},{dx:0,dy:14,label:'body'},{dx:-18,dy:-14,label:'left-up'}]){
+    const p=w2s(SLING_REST.x+hit.dx,SLING_REST.y+hit.dy);
+    fire('pointerdown',p.x,p.y,7);
+    fire('pointermove',p.x-50,p.y+30,7);
+    const dg=G.slingBird.drag;
+    if(Math.abs(dg.x+50)>0.5||Math.abs(dg.y-30)>0.5)throw Error('Relative drag mismatch on '+hit.label+': '+dg.x+','+dg.y);
+    fire('pointermove',p.x,p.y,7);
+    fire('pointerup',p.x,p.y,7);
+    if(G.phase!=='aim'||!G.slingBird)throw Error('Tap on '+hit.label+' fired the uma accidentally: '+G.phase);
+  }
  // 真实拖拽后必须发射
  const t=w2s(SLING_REST.x,SLING_REST.y);
  fire('pointerdown',t.x,t.y,8);
