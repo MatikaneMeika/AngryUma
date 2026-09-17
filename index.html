@@ -521,7 +521,12 @@ function createLevel(i){
   G.cam.z=camZoom();
   const aim=getAimTarget();
   const vw=cw/G.cam.z;
-  G.introFrom=clamp(L.focus,vw/2,Math.max(vw/2,L.w-vw/2));
+  const isLandscape=cw>=ch;
+  if(isLandscape && vw >= ((L.focus + 160) - (SLING.x - 140))){
+    G.introFrom = aim.tx;
+  } else {
+    G.introFrom = clamp(L.focus, vw/2, Math.max(vw/2, L.w-vw/2));
+  }
   G.cam.x=G.introFrom;G.cam.y=aim.ty;
   G.phase='intro';G.introT=0;G.userPanT=0;G.everLaunched=false;
   $('#scoreNum').textContent='0';
@@ -687,16 +692,18 @@ function camZoom(){
   const isLandscape = cw >= ch;
   let baseZ;
   if(isLandscape){
-    // 横屏：根据核心战场宽度（弹弓到目标建筑群）自适应容纳
+    // 横屏模式：优先把弹弓到核心目标城堡收纳在视野中
     const focusX = (levelDef && levelDef.focus) || 1350;
-    const battleW = Math.max(1320, focusX - (SLING.x - 140) + 120);
+    const battleW = Math.max(1280, focusX - (SLING.x - 140) + 140);
     const zW = cw / battleW;
-    const zH = ch / 750;
+    const zH = ch / 720;
     baseZ = Math.min(zW, zH);
     baseZ = clamp(baseZ, 0.45, 1.5);
   }else{
-    // 竖屏：以设计基准宽度 920 自适应
-    baseZ = clamp(cw / 920, 0.35, 1.15);
+    // 竖屏模式：手机与平板竖屏适配
+    const zH = ch / 820;
+    const zW = cw / 680;
+    baseZ = clamp(Math.min(zW, zH), 0.45, 1.2);
   }
   return baseZ * G.userZoom;
 }
@@ -705,20 +712,20 @@ function getAimTarget(){
   const z = G.cam.z;
   const vw = cw / z, vh = ch / z;
   const focusX = (levelDef && levelDef.focus) || 1350;
-  const leftBound = SLING.x - 130;
+  const leftBound = SLING.x - 140;
   const rightBound = focusX + 160;
   const span = rightBound - leftBound;
 
   let tx;
   if(cw >= ch && vw >= span){
-    // 宽屏且视野充足：整场居中展示
+    // 宽屏视野充裕：把弹弓和城堡居中对齐
     tx = (leftBound + rightBound) / 2;
   }else{
-    // 较窄屏幕：弹弓置于左侧约 20%
-    tx = SLING.x + 0.30 * vw;
+    // 视野较窄：弹弓在屏幕左侧 25% 处
+    tx = SLING.x + 0.25 * vw;
   }
-  // 地面牢固锚定在屏幕下方约 82% 处，无论什么分辨率都完整舒适
-  const ty = GROUND_Y - vh * 0.32;
+  // 核心关键：地面永远锚定在屏幕从顶部向下的 78% 黄金分割线，给弹弓、马娘和草坪留足空间！
+  const ty = GROUND_Y - vh * 0.28;
   return {tx, ty};
 }
 
@@ -726,10 +733,10 @@ function clampCam(){
   const z = G.cam.z, vw = cw / z, vh = ch / z;
   const maxW = (levelDef && levelDef.w) || G.worldW || 1900;
   G.cam.x = maxW < vw ? maxW / 2 : clamp(G.cam.x, vw / 2, maxW - vw / 2);
-  // Y 边界锁定：确保地面绝不会脱离屏幕底部
+  // Y 边界锁定：确保地面绝不会脱离屏幕底部，也不会飘到天上
   const aim = getAimTarget();
-  const maxCamY = GROUND_Y + 40 - vh / 2;
-  const minCamY = aim.ty - 340;
+  const minCamY = aim.ty - 350; // 允许跟随高抛抛物线向上移动
+  const maxCamY = GROUND_Y - vh * 0.12; // 镜头最低时，地面依然在屏幕 62% 处
   G.cam.y = clamp(G.cam.y, minCamY, maxCamY);
 }
 
