@@ -110,6 +110,28 @@ vm.createContext(sandbox);vm.runInContext(script,sandbox);
  if(maxOff>0.5)throw Error('Uma drifts from pointer after pan: '+maxOff);
  if(Math.hypot(G.cam.x-cam0.x,G.cam.y-cam0.y)>0.5)throw Error('Camera moved while dragging');
  fire('pointermove',b.x,b.y,3);fire('pointerup',b.x,b.y,3);
+ // 按在马娘"上半身/头部"（偏离圆心）时，马娘圆心也必须立刻对准指针，不得停在手指下方/上方
+ startLevel(0);
+ for(let i=0;i<200;i++)step();
+ G.queue=[];
+ for(const hit of [{dx:0,dy:-22,label:'head'},{dx:0,dy:14,label:'body'},{dx:-18,dy:-14,label:'left-up'}]){
+   const p=w2s(SLING_REST.x+hit.dx,SLING_REST.y+hit.dy);
+   fire('pointerdown',p.x,p.y,7);
+   fire('pointermove',p.x+2,p.y+2,7);
+   const w=toWorld(p.x+2,p.y+2),dg=G.slingBird.drag;
+   const dx=dg.x-(w.x-SLING_REST.x),dy=dg.y-(w.y-SLING_REST.y);
+   if(Math.hypot(dx,dy)>0.01)throw Error('Press on '+hit.label+' left the uma off the pointer: '+Math.hypot(dx,dy).toFixed(2));
+   // 按在马娘身上轻点（不移动）不得误发射
+   fire('pointerup',p.x+2,p.y+2,7);
+   if(G.phase!=='aim'||!G.slingBird)throw Error('Tap on '+hit.label+' fired the uma accidentally: '+G.phase);
+ }
+ // 真实拖拽后必须发射
+ const t=w2s(SLING_REST.x,SLING_REST.y);
+ fire('pointerdown',t.x,t.y,8);
+ fire('pointermove',t.x-70,t.y+50,8);
+ if(Math.abs(G.slingBird.drag.y-50)>0.01||Math.abs(G.slingBird.drag.x+70)>0.01)throw Error('Drag target mismatch: '+G.slingBird.drag.x.toFixed(1)+','+G.slingBird.drag.y.toFixed(1));
+ fire('pointerup',t.x-70,t.y+50,8);
+ if(G.phase!=='flight')throw Error('Real drag did not launch: '+G.phase);
  startLevel(0);
  for(let i=0;i<160;i++)step();
  G.phase='losing';G.loseT=0;G.uiShown=false;
@@ -133,5 +155,5 @@ vm.createContext(sandbox);vm.runInContext(script,sandbox);
  const back=cutFn(script,'function drawSlingBack');
  assert.ok(back.includes('SLING_TIP.l')&&back.includes('SLING_TIP.r'),'both forks must be drawn behind the uma');
  assert.ok(html.trimEnd().endsWith('</html>'));
- console.log('PASS: syntax, 8 assets, 6 levels (stable with new hitboxes), 8 drawImage variants, 3 skills, clear->next level (incl. out-of-bounds pig & lose-panel override), drag follows pointer, camera locked, slingshot rest lifted.');
+ console.log('PASS: syntax, 8 assets, 6 levels (stable with new hitboxes), 8 drawImage variants, 3 skills, clear->next level (incl. out-of-bounds pig & lose-panel override), drag follows pointer (no grab offset), camera locked, no accidental tap-launch, slingshot rest lifted.');
 })().catch(error=>{console.error(error);process.exitCode=1});

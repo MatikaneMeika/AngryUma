@@ -1204,21 +1204,16 @@ cv.addEventListener('pointerdown',e=>{
   }
   if(ptr.down)return;
   const w=toWorld(e.clientX,e.clientY);
-  ptr={down:true,id:e.pointerId,mode:'pan',lx:e.clientX,ly:e.clientY,sx:e.clientX,sy:e.clientY,t0:performance.now(),lastStretch:0,grab:null};
-  if(G.phase==='aim'&&G.slingBird&&dist(w.x,w.y,SLING_REST.x,SLING_REST.y)<140){
-    ptr.mode='sling';
-    // 抓取偏移：按在马娘身上时不瞬移；按在木叉范围内时才把马娘吸附到指针
-    const d0=G.slingBird.drag||{x:0,y:0},cx=SLING_REST.x+d0.x,cy=SLING_REST.y+d0.y;
-    ptr.grab=dist(w.x,w.y,cx,cy)<48?{x:w.x-cx,y:w.y-cy}:{x:0,y:0};
-  }
+  ptr={down:true,id:e.pointerId,mode:'pan',lx:e.clientX,ly:e.clientY,sx:e.clientX,sy:e.clientY,t0:performance.now(),lastStretch:0,w0:{x:w.x,y:w.y}};
+  if(G.phase==='aim'&&G.slingBird&&dist(w.x,w.y,SLING_REST.x,SLING_REST.y)<140)ptr.mode='sling';
   try{cv.setPointerCapture(e.pointerId)}catch(err){}
 });
 cv.addEventListener('pointermove',e=>{
   if(!ptr.down||e.pointerId!==ptr.id)return;
   if(ptr.mode==='sling'&&G.slingBird){
     const w=toWorld(e.clientX,e.clientY);
-    const g=ptr.grab||{x:0,y:0};
-    let dx=w.x-g.x-SLING_REST.x,dy=w.y-g.y-SLING_REST.y;
+    // 马娘圆心始终对准指针：不保留任何抓取偏移，避免按在马娘上半身时马娘停在手指下方
+    let dx=w.x-SLING_REST.x,dy=w.y-SLING_REST.y;
     const d=Math.hypot(dx,dy);
     if(d>SLING.max){dx*=SLING.max/d;dy*=SLING.max/d}
     G.slingBird.drag={x:dx,y:dy};
@@ -1236,8 +1231,11 @@ function pointerEnd(e){
   const wasSling=ptr.mode==='sling';
   ptr.down=false;ptr.mode='';
   if(wasSling&&G.slingBird){
+    // 取消判定：指针实际位移与拉弓距离都太小就当作"点了一下"，避免误发射
+    const wEnd=toWorld(e.clientX,e.clientY);
+    const mv=ptr.w0?dist(wEnd.x,wEnd.y,ptr.w0.x,ptr.w0.y):99;
     const d=G.slingBird.drag?Math.hypot(G.slingBird.drag.x,G.slingBird.drag.y):0;
-    if(d<16){G.slingBird.drag=null}
+    if(mv<10||d<16){G.slingBird.drag=null}
     else{
       const p={x:SLING_REST.x+G.slingBird.drag.x,y:SLING_REST.y+G.slingBird.drag.y};
       launch(p,-G.slingBird.drag.x*SLING.k,-G.slingBird.drag.y*SLING.k);
