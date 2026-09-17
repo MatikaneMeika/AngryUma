@@ -518,9 +518,11 @@ function createLevel(i){
   createScenery(L.world,L.w);
   for(let k=0;k<25;k++)Engine.update(engine,1000/60); // 预沉降稳定结构
   // 开场镜头扫视
+  G.cam.z=camZoom();
+  const aim=getAimTarget();
   const vw=cw/G.cam.z;
   G.introFrom=clamp(L.focus,vw/2,Math.max(vw/2,L.w-vw/2));
-  G.cam.x=G.introFrom;G.cam.y=620-ch/G.cam.z/2;
+  G.cam.x=G.introFrom;G.cam.y=aim.ty;
   G.phase='intro';G.introT=0;G.userPanT=0;G.everLaunched=false;
   $('#scoreNum').textContent='0';
   showTag(`第 ${i+1} 关 · ${THEMES[L.world].name}`);
@@ -680,34 +682,96 @@ function step(){
   if(G.shake>0)G.shake*=.88;
 }
 
-/* ================= 相机 ================= */
-function camZoom(){return Math.min(ch/720,cw/900)*G.userZoom}
-function clampCam(){
-  const z=G.cam.z,vw=cw/z,vh=ch/z;
-  G.cam.x=G.worldW<vw?G.worldW/2:clamp(G.cam.x,vw/2,G.worldW-vw/2);
-  const bottom=620,top=Math.min(-600,bottom-vh/2);
-  G.cam.y=clamp(G.cam.y,top,bottom-vh/2);
+/* ================= 相机系统 ================= */
+function camZoom(){
+  const isLandscape = cw >= ch;
+  let baseZ;
+  if(isLandscape){
+    // 横屏：根据核心战场宽度（弹弓到目标建筑群）自适应容纳
+    const focusX = (levelDef && levelDef.focus) || 1350;
+    const battleW = Math.max(1320, focusX - (SLING.x - 140) + 120);
+    const zW = cw / battleW;
+    const zH = ch / 750;
+    baseZ = Math.min(zW, zH);
+    baseZ = clamp(baseZ, 0.45, 1.5);
+  }else{
+    // 竖屏：以设计基准宽度 920 自适应
+    baseZ = clamp(cw / 920, 0.35, 1.15);
+  }
+  return baseZ * G.userZoom;
 }
+
+function getAimTarget(){
+  const z = G.cam.z;
+  const vw = cw / z, vh = ch / z;
+  const focusX = (levelDef && levelDef.focus) || 1350;
+  const leftBound = SLING.x - 130;
+  const rightBound = focusX + 160;
+  const span = rightBound - leftBound;
+
+  let tx;
+  if(cw >= ch && vw >= span){
+    // 宽屏且视野充足：整场居中展示
+    tx = (leftBound + rightBound) / 2;
+  }else{
+    // 较窄屏幕：弹弓置于左侧约 20%
+    tx = SLING.x + 0.30 * vw;
+  }
+  // 地面牢固锚定在屏幕下方约 82% 处，无论什么分辨率都完整舒适
+  const ty = GROUND_Y - vh * 0.32;
+  return {tx, ty};
+}
+
+function clampCam(){
+  const z = G.cam.z, vw = cw / z, vh = ch / z;
+  const maxW = (levelDef && levelDef.w) || G.worldW || 1900;
+  G.cam.x = maxW < vw ? maxW / 2 : clamp(G.cam.x, vw / 2, maxW - vw / 2);
+  // Y 边界锁定：确保地面绝不会脱离屏幕底部
+  const aim = getAimTarget();
+  const maxCamY = GROUND_Y + 40 - vh / 2;
+  const minCamY = aim.ty - 340;
+  G.cam.y = clamp(G.cam.y, minCamY, maxCamY);
+}
+
 function updateCamera(){
-  G.cam.z=camZoom();
-  const vw=cw/G.cam.z,vh=ch/G.cam.z;
+  G.cam.z = camZoom();
+  const vw = cw / G.cam.z, vh = ch / G.cam.z;
+  const aim = getAimTarget();
+
   if(G.state==='menu'||G.state==='select'){
-    G.cam.x=lerp(G.cam.x,SLING.x+vw*.18,.05);
-    G.cam.y=lerp(G.cam.y,620-vh/2,.05);clampCam();return;
+    G.cam.x = lerp(G.cam.x, SLING.x + vw * 0.18, 0.08);
+    G.cam.y = lerp(G.cam.y, aim.ty, 0.08);
+    clampCam();
+    return;
   }
-  let tx,ty;
+
+  let tx = aim.tx, ty = aim.ty;
+
   if(G.phase==='intro'){
-    const p=Math.min(1,G.introT/1.25),e=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;
-    const endX=clamp(SLING.x+vw*.22,vw/2,Math.max(vw/2,G.worldW-vw/2));
-    G.cam.x=lerp(G.introFrom,endX,e);G.cam.y=lerp(G.cam.y,620-vh/2,.08);clampCam();return;
+    const p = Math.min(1, G.introT / 1.25);
+    const e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+    G.cam.x = lerp(G.introFrom, aim.tx, e);
+    G.cam.y = aim.ty;
+    clampCam();
+    return;
   }
+
   if(G.phase==='flight'){
-    const lead=G.flock.find(e=>!e.dead);
-    if(lead){tx=lead.body.position.x+clamp(lead.body.velocity.x*9,-80,300);ty=lead.body.position.y-vh*.12}
+    const lead = G.flock.find(e => !e.dead);
+    if(lead){
+      const vx = lead.body.velocity.x;
+      tx = lead.body.position.x + clamp(vx * 12, -40, vw * 0.25);
+      // 升空时适当抬高视野展现优美弧线，但保底绝不丢失地面
+      ty = clamp(lead.body.position.y - vh * 0.1, aim.ty - 260, aim.ty);
+    }
   }
-  if(tx===undefined){tx=SLING.x+vw*.22;ty=620-vh/2}
-  ty=clamp(ty,-600,620-vh/2);
-  if(G.userPanT>0)G.userPanT--;else{G.cam.x=lerp(G.cam.x,tx,.07);G.cam.y=lerp(G.cam.y,ty,.07)}
+
+  if(G.userPanT > 0){
+    G.userPanT--;
+  }else{
+    G.cam.x = lerp(G.cam.x, tx, 0.08);
+    G.cam.y = lerp(G.cam.y, ty, 0.08);
+  }
   clampCam();
 }
 
@@ -726,9 +790,18 @@ function drawHillsLayer(th,layer,par){
   ctx.save();ctx.translate(G.cam.x*(1-par),0);
   ctx.fillStyle=layer===0?th.hillFar:th.hillNear;
   ctx.beginPath();
-  for(const h of G.scene.hills){if(h.l!==layer)continue;
-    ctx.moveTo(h.x-h.r,GROUND_Y+30);ctx.arc(h.x,GROUND_Y+30,h.r,Math.PI,0);}
-  ctx.lineTo(G.cam.x/cw*ch+99999,GROUND_Y+30);ctx.closePath();ctx.fill();
+  const hills=G.scene.hills.filter(h=>h.l===layer);
+  if(hills.length>0){
+    ctx.moveTo(-5000,GROUND_Y+200);
+    ctx.lineTo(hills[0].x-hills[0].r,GROUND_Y+30);
+    for(const h of hills){
+      ctx.arc(h.x,GROUND_Y+30,h.r,Math.PI,0,false);
+    }
+    ctx.lineTo(G.worldW+5000,GROUND_Y+30);
+    ctx.lineTo(G.worldW+5000,GROUND_Y+200);
+    ctx.lineTo(-5000,GROUND_Y+200);
+  }
+  ctx.closePath();ctx.fill();
   ctx.restore();
 }
 function drawCelestial(th){
@@ -782,10 +855,10 @@ function drawClouds(th){
   ctx.restore();
 }
 function drawGround(th){
-  ctx.fillStyle=th.ground;ctx.fillRect(-3000,GROUND_Y,G.worldW+6000,900);
-  ctx.fillStyle=th.grass;ctx.fillRect(-3000,GROUND_Y,G.worldW+6000,26);
+  ctx.fillStyle=th.ground;ctx.fillRect(-5000,GROUND_Y,G.worldW+10000,2500);
+  ctx.fillStyle=th.grass;ctx.fillRect(-5000,GROUND_Y,G.worldW+10000,26);
   ctx.fillStyle=th.grass2;
-  for(let x=-3000;x<G.worldW+3000;x+=52){ctx.beginPath();ctx.arc(x,GROUND_Y+26,26,0,Math.PI);ctx.fill()}
+  for(let x=-5000;x<G.worldW+5000;x+=52){ctx.beginPath();ctx.arc(x,GROUND_Y+26,26,0,Math.PI);ctx.fill()}
   for(const t of G.scene.tufts){
     ctx.strokeStyle=th.grass2;ctx.lineWidth=3;ctx.lineCap='round';
     ctx.beginPath();
@@ -1061,7 +1134,12 @@ let ptr={down:false,id:-1,mode:'',lx:0,ly:0,sx:0,sy:0,t0:0,lastStretch:0};
 cv.addEventListener('pointerdown',e=>{
   AU.resume();
   if(G.state!=='playing')return;
-  if(G.phase==='intro'){G.introT=99;return}
+  if(G.phase==='intro'){
+    G.introT=99;
+    const aim=getAimTarget();
+    G.cam.x=aim.tx;G.cam.y=aim.ty;
+    return;
+  }
   if(ptr.down)return;
   const w=toWorld(e.clientX,e.clientY);
   ptr={down:true,id:e.pointerId,mode:'pan',lx:e.clientX,ly:e.clientY,sx:e.clientX,sy:e.clientY,t0:performance.now(),lastStretch:0};
@@ -1080,7 +1158,7 @@ cv.addEventListener('pointermove',e=>{
     if(Math.abs(st-ptr.lastStretch)>13){ptr.lastStretch=st;sfx('stretch',st)}
   }else{
     const dx=(e.clientX-ptr.lx)/G.cam.z,dy=(e.clientY-ptr.ly)/G.cam.z;
-    G.cam.x-=dx;G.cam.y-=dy;G.userPanT=160;
+    G.cam.x-=dx;G.cam.y-=dy;G.userPanT=75; // 约 1.2 秒后平滑复位
     clampCam();
   }
   ptr.lx=e.clientX;ptr.ly=e.clientY;
@@ -1104,8 +1182,11 @@ function pointerEnd(e){
 }
 cv.addEventListener('pointerup',pointerEnd);
 cv.addEventListener('pointercancel',pointerEnd);
-cv.addEventListener('wheel',e=>{e.preventDefault();
-  G.userZoom=clamp(G.userZoom*(e.deltaY>0?.92:1.08),.75,1.6)},{passive:false});
+cv.addEventListener('wheel',e=>{
+  e.preventDefault();
+  G.userZoom=clamp(G.userZoom*(e.deltaY>0?.92:1.08),.75,1.5);
+  clampCam();
+},{passive:false});
 cv.addEventListener('contextmenu',e=>e.preventDefault());
 document.addEventListener('pointerdown',()=>AU.resume(),{once:true});
 
@@ -1209,11 +1290,20 @@ function resize(){
   cv.width=Math.round(cw*dpr);cv.height=Math.round(ch*dpr);
   ctx.setTransform(dpr,0,0,dpr,0,0);
 }
-window.addEventListener('resize',()=>{resize();clampCam()});
+window.addEventListener('resize',()=>{
+  resize();
+  G.cam.z=camZoom();
+  const aim=getAimTarget();
+  if(G.phase==='aim'||G.phase==='loading'||G.phase==='intro')G.cam.y=aim.ty;
+  clampCam();
+});
 resize();
 createScenery(0,1900);
 G.cam.z=camZoom();
-G.cam.x=SLING.x+(cw/G.cam.z)*.18;G.cam.y=620-ch/G.cam.z/2;
+const aim0=getAimTarget();
+G.cam.x=SLING.x+(cw/G.cam.z)*.18;
+G.cam.y=aim0.ty;
+clampCam();
 let last=performance.now(),acc=0;
 function loop(t){
   acc+=Math.min(t-last,60);last=t;
