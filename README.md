@@ -1,35 +1,53 @@
-# AngryUma · 弹弓大作战
+# 愤怒的马娘 · Angry Uma 🎯🐎
 
-使用 Canvas 2D、Matter.js 和本地角色 PNG 贴图的静态网页游戏，包含三个世界、六个关卡和四种技能角色。
+基于 **Matter.js** 2D 物理引擎与 **HTML5 Canvas** 打造的《赛马娘》同人弹射物理小游戏。
 
-## 本地运行
+👉 **[点击立即在线游玩](https://matikanemeika.github.io/AngryUma/)**
 
-在项目目录运行 `python -m http.server 8080 --bind 127.0.0.1`，然后打开 http://127.0.0.1:8080/ 。无需安装 npm 依赖或构建。
+---
 
-- 拖住弹弓角色向后拉，松手发射。
-- 飞行中点击画面：加速、分裂或引爆（普通角色没有主动技能）。
-- 拖动画面平移镜头，鼠标滚轮缩放。
-- 进度与音效设置保存在当前浏览器 localStorage 中。
+## 🎮 游戏角色与技能
 
-## 素材对应
+| 角色贴图 | 角色名称 | 技能特色 |
+| :--- | :--- | :--- |
+| ![帝王](media/birds/initial.png) | **东海帝王** | 初始全能马娘，弹力强劲，手感扎实 |
+| ![米浴](media/birds/accelerate.png) | **米浴** | 飞行途中点击屏幕，瞬间**极速直线冲刺**，破木摧石！ |
+| ![内恰](media/birds/split.png) | **优秀素质 (内恰)** | 飞行途中点击屏幕，瞬间**分裂为三位小内恰**形成范围覆盖！ |
+| ![波旁](media/birds/boom.png) | **美浦波旁** | 生化机械马娘，点击屏幕或受剧烈撞击后触发**超负荷大爆炸**！ |
 
-| 用途 | 文件 |
-| --- | --- |
-| 普通角色 | `media/birds/initial.png` |
-| 加速角色 | `media/birds/accelerate.png` |
-| 分裂角色 | `media/birds/split.png` |
-| 爆炸角色 | `media/birds/boom.png` |
-| 普通对手 | `media/pigs/pig_normal.png` / `pig_hurt.png` |
-| 国王对手 | `media/pigs/King_normal.png` / `King_hurt.png` |
+### 🎯 目标敌人：摸鱼的菱钻奇宝
 
-`index.html` 的 `SPRITES` 保存素材路径及透明边缘裁剪区域。加载全部贴图后才启动游戏循环。角色仅以 `drawImage` 绘制，旋转跟随物理刚体；碰撞形状依旧为圆形。普通/受伤贴图共享定位，国王的王冠不改变身体中心。原始素材保持不变。
+| 正常状态 | 受伤状态 (HP < 55%) | 说明 |
+| :---: | :---: | :--- |
+| ![奇宝正常](media/pigs/pig_normal.png) | ![奇宝受伤](media/pigs/pig_hurt.png) | **普通奇宝猪**：戴着蓝白横条纹耳罩，受损时会闭眼吃痛 |
+| ![国王奇宝正常](media/pigs/King_normal.png) | ![国王奇宝受伤](media/pigs/King_hurt.png) | **国王奇宝猪**：头顶王冠，拥有更厚实的血量与高额通关奖励 |
 
-Matter.js 0.19.0 已放在 `vendor/` 下，许可证见 `vendor/MATTER-LICENSE.txt`。Google Fonts 为可选装饰字体，无法连接时回退到系统字体。角色素材由项目所有者提供，其授权由原权利人保留；本项目不声明拥有素材版权。
+---
 
-## 验证
+## 🌟 游戏特色
 
-运行 `node tests/smoke.cjs` 进行脚本语法、资源存在性、贴图加载、六关初始化、受伤贴图选择及技能逻辑测试。该测试使用模拟 Canvas/DOM，不替代真实浏览器视觉和交互验收。
+1. **原汁原味的物理弹射体验**：使用 Matter.js 真实刚体动力学，包含惯性、重力、角速度、弹性碰撞及建筑连锁坍塌。
+2. **三套不同主题世界**：
+   - 特雷森青青草地
+   - 黄昏训练沙地
+   - 奇宝夜间主场（附带星空与火把动态光影）
+3. **精细贴图与动效**：
+   - 包含拉弓形变、尾迹轨迹线、羽毛消散、火花爆裂、金币与加分浮动动效。
+   - 自动适配各种手机触屏与 PC 浏览器（支持鼠标滚轮缩放与拖拽视口）。
+4. **Web Audio 合成音效**：纯原生合成音效，无需外部繁重音频文件，即点即响。
 
-## GitHub Pages
+---
 
-部署静态文件即可。在仓库 **Settings → Pages** 中选择 **Deploy from a branch → main → /(root)** 并保存。无需配置服务器端运行环境。
+## 🚀 GitHub Pages 开启与在线游玩指南
+
+1. 打开本仓库的 **[Pages 设置页面](https://github.com/MatikaneMeika/AngryUma/settings/pages)**。
+2. 在 **Build and deployment** 下：
+   - **Source** 选择 `Deploy from a branch`。
+   - **Branch** 选择 `main`，目录保持 `/ (root)`。
+3. 点击 **Save** 保存。
+4. 等待 1~2 分钟 GitHub 构建完毕后，即可通过以下链接访问游玩：
+   `https://matikanemeika.github.io/AngryUma/`
+
+---
+
+*Enjoy the game! 芜湖起飞！*

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>AngryUma · 弹弓大作战</title>
+<title>愤怒的马娘 · Angry Uma</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
@@ -30,7 +30,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 .bigbtn.grey:active{box-shadow:0 2px 0 #565142}
 /* ---------- 主菜单 ---------- */
 #menu{justify-content:flex-start;padding-top:9vh}
-#logo{font-family:'Luckiest Guy',cursive;font-size:min(14vw,96px);line-height:.95;color:#e23b2c;-webkit-text-stroke:3px #7a1408;text-shadow:0 5px 0 #7a1408,0 10px 22px rgba(0,0,0,.25);transform:rotate(-3deg);animation:logob 2.6s ease-in-out infinite;text-align:center}
+#logo{font-family:'Luckiest Guy',cursive;font-size:min(13vw,92px);line-height:.95;color:#e23b2c;-webkit-text-stroke:3px #7a1408;text-shadow:0 5px 0 #7a1408,0 10px 22px rgba(0,0,0,.25);transform:rotate(-3deg);animation:logob 2.6s ease-in-out infinite;text-align:center}
 #logo i{display:block;font-family:'ZCOOL KuaiLe';font-style:normal;font-size:.34em;color:#fff;-webkit-text-stroke:0;text-shadow:0 3px 0 rgba(0,0,0,.35);letter-spacing:.5em;margin-left:.5em}
 @keyframes logob{0%,100%{transform:rotate(-3deg) translateY(0)}50%{transform:rotate(-3deg) translateY(-12px)}}
 #bPlay{margin-top:7vh;font-size:30px;padding:16px 58px;animation:pulse 1.8s ease-in-out infinite}
@@ -77,7 +77,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 .panel{background:#fff6e0;border:4px solid #8a5a2a;border-radius:24px;padding:26px 34px;display:flex;flex-direction:column;align-items:center;gap:16px;box-shadow:0 10px 0 rgba(0,0,0,.25);max-width:92vw;animation:pop .35s cubic-bezier(.34,1.56,.64,1)}
 @keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
 .panel h2{font-size:34px;color:#5a3a14;font-weight:normal;letter-spacing:.1em}
-.panel .tip{font-size:17px;color:#9a7a4e}
+.panel .tip{font-size:17px;color:#9a7a4e;text-align:center;max-width:320px}
 .row2{display:flex;gap:14px}
 .rowBtns{display:flex;gap:14px;align-items:center}
 .rowBtns .bigbtn{font-size:21px;padding:12px 30px}
@@ -91,22 +91,13 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 #bonusLine.on{opacity:1}
 #allDone{display:flex;align-items:center;gap:8px;background:#fdf0cf;border:2px dashed #d8a94e;border-radius:14px;padding:8px 18px;color:#b06e1d;font-size:18px}
 #allDone svg{width:24px;height:24px;fill:#ffc93a;stroke:#c8860c;stroke-width:1}
-#losePig .loseSprite{width:150px;height:118px;background:url("media/pigs/pig_normal.png") no-repeat;background-size:370px 202px;background-position:-98px -41px}
+#losePig{width:120px;height:100px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+#losePig img{width:280px;max-width:none;transform:translateY(2px);pointer-events:none}
 #err{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;color:#5a3a14;font-size:20px;background:#fff6e0;text-align:center;padding:30px}
-#worldList{width:100%;max-width:780px}
-@media(max-width:600px){
-  .wrow{flex-wrap:wrap;gap:10px;padding:12px}
-  .wbadge{width:56px;height:56px}.winfo b{font-size:21px}
-  .lvls{width:100%;justify-content:center}
-  .panel{padding:20px 16px}.row2{flex-wrap:wrap;justify-content:center}
-  .row2 .bigbtn{font-size:20px;padding:12px 22px}
-  #hint{font-size:15px;white-space:normal;text-align:center;width:max-content}
-}
 </style>
 </head>
 <body>
 <canvas id="cv"></canvas>
-<div id="loading" class="screen" style="z-index:10;background:#fff6e0;color:#5a3a14;font-size:24px">正在加载角色贴图…</div>
 <div id="ui">
   <!-- 游戏内 HUD -->
   <div id="hud" class="hidden">
@@ -120,10 +111,10 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
   </div>
   <!-- 主菜单 -->
   <div id="menu" class="screen">
-    <div id="logo">ANGRY UMA<i>弹弓大作战</i></div>
+    <div id="logo">ANGRY UMA<i>愤怒的马娘</i></div>
     <button class="bigbtn" id="bPlay">开 始 游 戏</button>
     <button class="iconbtn" id="bSoundMenu"></button>
-    <div id="menuFoot">三个世界 · 六个关卡 · 四种小鸟</div>
+    <div id="menuFoot">三个世界 · 六个关卡 · 四位马娘</div>
   </div>
   <!-- 选关 -->
   <div id="select" class="screen hidden">
@@ -164,7 +155,9 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
   <!-- 失败 -->
   <div id="lose" class="screen overlay hidden">
     <div class="panel">
-      <div id="losePig"></div>
+      <div id="losePig">
+        <img src="media/pigs/King_normal.png" alt="奇宝猪">
+      </div>
       <h2>哎呀，失败了！</h2>
       <p class="tip" id="loseTip"></p>
       <div class="rowBtns">
@@ -174,7 +167,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
     </div>
   </div>
 </div>
-<script src="vendor/matter.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
 <script>
 'use strict';
 if(!window.Matter){
@@ -190,6 +183,32 @@ const dist=(x1,y1,x2,y2)=>Math.hypot(x1-x2,y1-y2);
 const TAU=Math.PI*2;
 function sr(seed){let s=seed*7919+13;return()=>{s=(s*9301+49297)%233280;return s/233280}}
 const {Engine,Bodies,Body,Composite,Events}=Matter;
+
+/* ================= 资源预加载管理器 ================= */
+const ASSET_SOURCES={
+  birds:{
+    red:'media/birds/initial.png',     // 东海帝王
+    chuck:'media/birds/accelerate.png',// 米浴
+    blue:'media/birds/split.png',      // 优秀素质 (内恰)
+    bomb:'media/birds/boom.png'        // 美浦波旁
+  },
+  pigs:{
+    pig_normal:'media/pigs/pig_normal.png', // 菱钻奇宝
+    pig_hurt:'media/pigs/pig_hurt.png',
+    King_normal:'media/pigs/King_normal.png',
+    King_hurt:'media/pigs/King_hurt.png'
+  }
+};
+const IMAGES={birds:{},pigs:{}};
+function preloadAssets(){
+  for(const[k,src]of Object.entries(ASSET_SOURCES.birds)){
+    const img=new Image();img.src=src;IMAGES.birds[k]=img;
+  }
+  for(const[k,src]of Object.entries(ASSET_SOURCES.pigs)){
+    const img=new Image();img.src=src;IMAGES.pigs[k]=img;
+  }
+}
+preloadAssets();
 
 /* ================= 存档 ================= */
 const SAVE_KEY='ab_html_save_v1';
@@ -254,17 +273,17 @@ const MATS={
   stone:{hp:200,density:.0035,fill:'#b7b7b0',edge:'#76766e',score:500}
 };
 const BIRDS={
-  red:{r:21,density:.0042,power:1,matMult:{wood:1,glass:1,stone:.8},name:'小红'},
-  chuck:{r:20,density:.0042,power:1,matMult:{wood:3,glass:1,stone:.5},name:'黄风'},
-  blue:{r:15,density:.0038,power:.55,matMult:{wood:.6,glass:3,stone:.3},name:'蓝宝'},
-  bomb:{r:24,density:.0055,power:1.15,matMult:{wood:1.5,glass:1.2,stone:2.2},name:'黑炮'}
+  red:{r:22,density:.0042,power:1,matMult:{wood:1,glass:1,stone:.8},name:'帝王'},
+  chuck:{r:21,density:.0042,power:1,matMult:{wood:3,glass:1,stone:.5},name:'米浴'},
+  blue:{r:16,density:.0038,power:.55,matMult:{wood:.6,glass:3,stone:.3},name:'内恰'},
+  bomb:{r:25,density:.0055,power:1.15,matMult:{wood:1.5,glass:1.2,stone:2.2},name:'波旁'}
 };
 const THEMES=[
-  {name:'青青草原',sky:['#79cdf4','#eaf8fd'],hillFar:'#c4e9b0',hillNear:'#a2d98b',ground:'#8a5a33',grass:'#6fbf44',grass2:'#57a835',cloud:'rgba(255,255,255,.92)',mid:'bush',sun:{x:.78,y:-210,r:56,c:'#ffdf6b',glow:'rgba(255,235,150,.28)'}},
-  {name:'黄昏荒漠',sky:['#f29a52','#ffe4ad'],hillFar:'#f0cd98',hillNear:'#e5b478',ground:'#c08345',grass:'#dca75f',grass2:'#c78c42',cloud:'rgba(255,240,215,.75)',mid:'cactus',sun:{x:.28,y:20,r:88,c:'#ff8a3d',glow:'rgba(255,150,70,.3)'}},
-  {name:'猪王夜堡',sky:['#131c3d','#3d4d84'],hillFar:'#25315e',hillNear:'#1b2547',ground:'#3a2f28',grass:'#3f6d49',grass2:'#325840',cloud:'rgba(70,85,140,.4)',mid:'castle',sun:{x:.76,y:-190,r:64,c:'#f2e6c4',glow:'rgba(245,235,200,.2)'},night:true}
+  {name:'特雷森草地',sky:['#79cdf4','#eaf8fd'],hillFar:'#c4e9b0',hillNear:'#a2d98b',ground:'#8a5a33',grass:'#6fbf44',grass2:'#57a835',cloud:'rgba(255,255,255,.92)',mid:'bush',sun:{x:.78,y:-210,r:56,c:'#ffdf6b',glow:'rgba(255,235,150,.28)'}},
+  {name:'黄昏训练沙地',sky:['#f29a52','#ffe4ad'],hillFar:'#f0cd98',hillNear:'#e5b478',ground:'#c08345',grass:'#dca75f',grass2:'#c78c42',cloud:'rgba(255,240,215,.75)',mid:'cactus',sun:{x:.28,y:20,r:88,c:'#ff8a3d',glow:'rgba(255,150,70,.3)'}},
+  {name:'奇宝夜间主场',sky:['#131c3d','#3d4d84'],hillFar:'#25315e',hillNear:'#1b2547',ground:'#3a2f28',grass:'#3f6d49',grass2:'#325840',cloud:'rgba(70,85,140,.4)',mid:'castle',sun:{x:.76,y:-190,r:64,c:'#f2e6c4',glow:'rgba(245,235,200,.2)'},night:true}
 ];
-/* 关卡搭建辅助：P=竖柱 Beam=横梁 Box=方块 NP/KP=普通猪/国王猪 */
+/* 关卡搭建辅助：P=竖柱 Beam=横梁 Box=方块 NP/KP=普通奇宝猪/国王奇宝猪 */
 const P=(x,m)=>({x,y:515,w:20,h:90,m});
 const P2=(x,y,m)=>({x,y,w:20,h:90,m});
 const Beam=(x,y,m,len)=>({x,y,w:len||150,h:20,m});
@@ -371,11 +390,11 @@ function spawnBirdBody(type,x,y,vx,vy,rOverride){
   const ent={kind:'bird',type,body,r:rOverride||d.r,power:d.power,matMult:d.matMult,skillUsed:type==='red',fuse:-1,dead:false,dashT:0};
   body.gd=ent;G.flock.push(ent);Composite.add(world,body);return ent;
 }
-function removeBird(ent,quiet){if(ent.dead)return;ent.dead=true;try{Composite.remove(world,ent.body)}catch(e){}}
+function removeBird(ent){if(ent.dead)return;ent.dead=true;try{Composite.remove(world,ent.body)}catch(e){}}
 
 /* ================= 伤害系统 ================= */
 function pushDamage(ent,dmg){const cur=G.damageBuf.get(ent)||0;if(dmg>cur)G.damageBuf.set(ent,dmg)}
-function applyHitRules(A,B,rel){ // A 撞击 B（对 B 结算伤害）
+function applyHitRules(A,B,rel){
   const ea=A.gd,eb=B.gd;if(!eb)return;let dmg=0;
   if(ea&&ea.kind==='bird'){
     if(eb.kind==='pig')dmg=rel*5*ea.power;
@@ -463,21 +482,21 @@ function triggerSkill(){
   const b=G.flock.find(e=>!e.dead&&!e.skillUsed);
   if(!b)return;
   b.skillUsed=true;markSkillSeen(b.type);
-  if(b.type==='chuck'){
+  if(b.type==='chuck'){ // 米浴加速冲刺
     const v=b.body.velocity,sp=Math.hypot(v.x,v.y)||.1;
     const k=Math.min(34,sp*2.3+6)/sp;
     Body.setVelocity(b.body,{x:v.x*k,y:v.y*k});
     b.dashT=22;fx('ring',b.body.position.x,b.body.position.y,1,{s:14});sfx('skill');
-  }else if(b.type==='blue'){
+  }else if(b.type==='blue'){ // 内恰分裂成三只
     const p=b.body.position,v=b.body.velocity,sp=Math.hypot(v.x,v.y);
     removeBird(b);fx('puff',p.x,p.y,4,{s:7});
     for(let i=-1;i<=1;i++){
       const a=Math.atan2(v.y,v.x)+i*.17;
-      const e=spawnBirdBody('blue',p.x+i*4,p.y+i*22,Math.cos(a)*sp,Math.sin(a)*sp,12);
+      const e=spawnBirdBody('blue',p.x+i*4,p.y+i*22,Math.cos(a)*sp,Math.sin(a)*sp,13);
       e.skillUsed=true;
     }
     sfx('split');
-  }else if(b.type==='bomb'){
+  }else if(b.type==='bomb'){ // 波旁超负荷引爆
     const p={x:b.body.position.x,y:b.body.position.y};
     removeBird(b);explode(p.x,p.y);
   }
@@ -497,7 +516,7 @@ function createLevel(i){
   G.queue=[...L.birds];G.slingBird=null;G.hop=null;
   G.score=0;G.dispScore=0;G.uiShown=false;G.slingSnap=0;G.shake=0;G.flash=0;
   createScenery(L.world,L.w);
-  for(let k=0;k<25;k++)Engine.update(engine,1000/60); // 预沉降，保证结构贴合稳定
+  for(let k=0;k<25;k++)Engine.update(engine,1000/60); // 预沉降稳定结构
   // 开场镜头扫视
   const vw=cw/G.cam.z;
   G.introFrom=clamp(L.focus,vw/2,Math.max(vw/2,L.w-vw/2));
@@ -538,7 +557,8 @@ function addScore(n,pos){G.score+=n;G.floaters.push({x:pos.x,y:pos.y-34,txt:'+'+
 /* ================= 胜负结算 ================= */
 function showWin(){
   G.phase='ui';G.uiShown=true;
-  const left=G.queue.length+(G.slingBird?1:0)+(G.hop?1:0);
+  const alive=G.flock.filter(e=>!e.dead).length;
+  const left=G.queue.length+(G.slingBird?1:0)+alive;
   const bonus=left*10000,total=G.score+bonus;
   const stars=left>=2?3:left===1?2:1;
   save.stars[G.level]=Math.max(save.stars[G.level],stars);
@@ -547,7 +567,7 @@ function showWin(){
   const svgs=$('#starsRow').querySelectorAll('svg');
   svgs.forEach(s=>{s.classList.remove('on');s.style.animationDelay=''});
   for(let i=0;i<stars;i++){svgs[i].classList.add('on');svgs[i].style.animationDelay=(0.35+i*0.4)+'s';setTimeout(()=>sfx('star'),350+i*400)}
-  $('#bonusLine').textContent=`剩余小鸟 × ${left}　奖励 +${bonus}`;
+  $('#bonusLine').textContent=`剩余马娘 × ${left}　奖励 +${bonus}`;
   $('#bonusLine').classList.remove('on');
   const ad=$('#allDone');
   if(G.level===5){ad.classList.remove('hidden');ad.innerHTML='<svg viewBox="0 0 24 24"><path d="M12 2l2.9 6.3 6.9.6-5.2 4.6 1.5 6.8-6.1-3.6-6.1 3.6 1.5-6.8L2.2 8.9l6.9-.6z"/></svg>恭喜你通关了全部关卡！<svg viewBox="0 0 24 24"><path d="M12 2l2.9 6.3 6.9.6-5.2 4.6 1.5 6.8-6.1-3.6-6.1 3.6 1.5-6.8L2.2 8.9l6.9-.6z"/></svg>';}
@@ -560,7 +580,12 @@ function showWin(){
     if(p<1)requestAnimationFrame(roll);else $('#bonusLine').classList.add('on');})();
   sfx('win');
 }
-const LOSE_TIPS=['猪还在嘲笑你，再试一次吧！','别灰心，换个角度再试试！','不同的小鸟有不同的本领哦！','瞄准结构的支柱，一击必杀！'];
+const LOSE_TIPS=[
+  '奇宝还在悠闲地摸鱼，再试一次吧！',
+  '别灰心，换个角度让马娘们再次出击！',
+  '不同马娘有不同特技，善用米浴冲刺和波旁引爆！',
+  '瞄准结构的支柱支撑点，一击全倒！'
+];
 function showLose(){
   G.phase='ui';G.uiShown=true;
   $('#loseTip').textContent=LOSE_TIPS[Math.floor(Math.random()*LOSE_TIPS.length)];
@@ -591,7 +616,9 @@ function updateParticles(){
   for(const f of G.floaters)f.t+=1/60;
   G.floaters=G.floaters.filter(f=>f.t<1.1);
 }
-function birdColor(t){return t==='red'?'#e23b2c':t==='chuck'?'#f8d51e':t==='blue'?'#58a7e0':'#383842'}
+function birdColor(t){
+  return t==='red'?'#a34e36':t==='chuck'?'#44384a':t==='blue'?'#c14b3d':'#ba554b';
+}
 
 /* ================= 每帧逻辑 ================= */
 function step(){
@@ -606,9 +633,12 @@ function step(){
     if(lead&&G.t%3===0&&G.dots.length<110)G.dots.push({x:lead.body.position.x,y:lead.body.position.y});
     for(const e of G.flock){
       if(e.dead)continue;
-      if(e.fuse>0){e.fuse--;
-        const fp=e.body.position;fx('spark',fp.x+Math.cos(e.body.angle-1.9)*e.r*1.5,fp.y+Math.sin(e.body.angle-1.9)*e.r*1.5,1,{s:1});
-        if(e.fuse===0){const p={x:e.body.position.x,y:e.body.position.y};removeBird(e);explode(p.x,p.y)}}
+      if(e.fuse>0){
+        e.fuse--;
+        const fp=e.body.position;
+        fx('spark',fp.x+Math.cos(e.body.angle-1.5)*e.r*1.3,fp.y+Math.sin(e.body.angle-1.5)*e.r*1.3,1,{s:1});
+        if(e.fuse===0){const p={x:e.body.position.x,y:e.body.position.y};removeBird(e);explode(p.x,p.y)}
+      }
       if(e.dashT>0){e.dashT--;fx('spark',e.body.position.x,e.body.position.y,2,{s:1})}
       const pos=e.body.position;
       if(pos.x<-160||pos.x>G.worldW+260||pos.y>1300)removeBird(e);
@@ -706,7 +736,7 @@ function drawCelestial(th){
   const s=th.sun;
   ctx.fillStyle=s.glow;ctx.beginPath();ctx.arc(G.worldW*s.x,s.y,s.r*1.8,0,TAU);ctx.fill();
   ctx.fillStyle=s.c2||s.c;ctx.beginPath();ctx.arc(G.worldW*s.x,s.y,s.r,0,TAU);ctx.fill();
-  if(th.night){ // 月亮缺口
+  if(th.night){
     ctx.fillStyle=th.sky[0];ctx.beginPath();ctx.arc(G.worldW*s.x-s.r*.38,s.y-s.r*.22,s.r*.86,0,TAU);ctx.fill();}
   ctx.restore();
 }
@@ -756,7 +786,7 @@ function drawGround(th){
   ctx.fillStyle=th.grass;ctx.fillRect(-3000,GROUND_Y,G.worldW+6000,26);
   ctx.fillStyle=th.grass2;
   for(let x=-3000;x<G.worldW+3000;x+=52){ctx.beginPath();ctx.arc(x,GROUND_Y+26,26,0,Math.PI);ctx.fill()}
-  for(const t of G.scene.tufts){ // 草簇
+  for(const t of G.scene.tufts){
     ctx.strokeStyle=th.grass2;ctx.lineWidth=3;ctx.lineCap='round';
     ctx.beginPath();
     ctx.moveTo(t.x,GROUND_Y+2);ctx.quadraticCurveTo(t.x-6*t.v,GROUND_Y-12*t.v,t.x-9*t.v,GROUND_Y-20*t.v);
@@ -780,47 +810,55 @@ function drawGround(th){
     }
   }
 }
-/* ---------- 角色绘制 ---------- */
-const SPRITES={
-  red:{src:'media/birds/initial.png',crop:[83,27,430,476]},
-  chuck:{src:'media/birds/accelerate.png',crop:[59,11,439,492]},
-  blue:{src:'media/birds/split.png',crop:[25,25,486,478]},
-  bomb:{src:'media/birds/boom.png',crop:[37,23,428,480]},
-  pig:{src:'media/pigs/pig_normal.png',crop:[374,156,573,445]},
-  pigHurt:{src:'media/pigs/pig_hurt.png',crop:[374,156,573,445]},
-  king:{src:'media/pigs/King_normal.png',crop:[374,32,573,569]},
-  kingHurt:{src:'media/pigs/King_hurt.png',crop:[374,32,573,569]}
-};
-function loadSprites(){
-  return Promise.all(Object.values(SPRITES).map(sprite=>new Promise((resolve,reject)=>{
-    const image=new Image();
-    image.onload=()=>{sprite.image=image;resolve()};
-    image.onerror=()=>reject(new Error('贴图加载失败：'+sprite.src));
-    image.src=sprite.src;
-  })));
-}
-function drawSprite(key,x,y,angle,r){
-  const sprite=SPRITES[key],[sx,sy,sw,sh]=sprite.crop;
-  const king=key==='king'||key==='kingHurt';
-  // 王冠向上延伸，普通与国王状态共用身体中心。
-  const scale=2*r/(king?445:Math.min(sw,sh));
-  const width=sw*scale,height=sh*scale;
-  const top=king?-(222.5+124)*scale:-height/2;
-  ctx.save();ctx.translate(x,y);ctx.rotate(angle);
-  ctx.drawImage(sprite.image,sx,sy,sw,sh,-width/2,top,width,height);
+
+/* ---------- 角色贴图绘制 ---------- */
+function drawBird(type,x,y,ang,r,opt){
+  opt=opt||{};
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.rotate(ang);
+  const img=IMAGES.birds[type];
+  if(img&&img.complete&&img.naturalWidth>0){
+    const size=r*2.55;
+    ctx.drawImage(img,-size/2,-size/2-r*0.16,size,size);
+  }else{
+    ctx.fillStyle=birdColor(type);
+    ctx.beginPath();ctx.arc(0,0,r,0,TAU);ctx.fill();
+  }
+  // 美浦波旁超负荷引信火花
+  if(opt.fuse){
+    const fx0=0,fy0=-r*1.38,ph=Math.sin(G.t*.8);
+    ctx.fillStyle='#ffd76e';star5(fx0,fy0,r*.35+ph*r*.08,G.t*.3);ctx.fill();
+    ctx.fillStyle='#fff';star5(fx0,fy0,r*.16,G.t*.3);ctx.fill();
+  }
   ctx.restore();
 }
-function drawBird(type,x,y,ang,r,opt){
-  drawSprite(type,x,y,ang,r);
-  if(opt&&opt.fuse){
-    ctx.save();ctx.translate(x,y);ctx.rotate(ang);
-    ctx.fillStyle='#ffd76e';star5(0,-r*1.35,r*.24,G.t*.3);ctx.fill();ctx.restore();
-  }
-}
+
 function drawPig(ent){
-  const key=ent.type==='k'?(ent.hurt?'kingHurt':'king'):(ent.hurt?'pigHurt':'pig');
-  drawSprite(key,ent.body.position.x,ent.body.position.y,ent.body.angle,ent.r);
+  const b=ent.body,r=ent.r,hurt=ent.hurt,king=ent.type==='k';
+  ctx.save();
+  ctx.translate(b.position.x,b.position.y);
+  ctx.rotate(b.angle);
+  const key=king?(hurt?'King_hurt':'King_normal'):(hurt?'pig_hurt':'pig_normal');
+  const img=IMAGES.pigs[key];
+  if(img&&img.complete&&img.naturalWidth>0){
+    if(king){
+      // 国王奇宝猪: bounds=(376, 34, w=569, h=565)
+      const dw=r*2.52,dh=dw*(565/569);
+      ctx.drawImage(img,376,34,569,565,-dw*0.49,-dh*0.58,dw,dh);
+    }else{
+      // 普通奇宝猪: bounds=(376, 158, w=569, h=441)
+      const dw=r*2.52,dh=dw*(441/569);
+      ctx.drawImage(img,376,158,569,441,-dw*0.49,-dh*0.52,dw,dh);
+    }
+  }else{
+    ctx.fillStyle=hurt?'#e89f9f':'#f5a7a7';
+    ctx.beginPath();ctx.arc(0,0,r,0,TAU);ctx.fill();
+    ctx.strokeStyle='#b86b6b';ctx.lineWidth=2;ctx.stroke();
+  }
+  ctx.restore();
 }
+
 function drawBlock(ent){
   const b=ent.body,m=MATS[ent.mat];
   ctx.save();ctx.translate(b.position.x,b.position.y);ctx.rotate(b.angle);
@@ -858,6 +896,7 @@ function drawBlock(ent){
   }
   ctx.restore();
 }
+
 /* ---------- 弹弓 ---------- */
 function slingWood(x1,y1,x2,y2,w){
   ctx.strokeStyle='#7a4a22';ctx.lineWidth=w;ctx.lineCap='round';
@@ -866,7 +905,6 @@ function slingWood(x1,y1,x2,y2,w){
   ctx.beginPath();ctx.moveTo(x1-w*.22,y1);ctx.lineTo(x2-w*.22,y2);ctx.stroke();
 }
 function bandPoint(){
-  // 皮筋端点：拖拽中的鸟 / 回弹动画 / 松弛
   if(G.slingBird&&G.slingBird.drag){
     const d=G.slingBird.drag;
     return{x:SLING.x+d.x,y:SLING.anchorY+d.y,taut:true};
@@ -883,7 +921,7 @@ function drawSlingBack(){
   if(bp){ctx.strokeStyle='#4a3018';ctx.lineWidth=8;ctx.lineCap='round';
     ctx.beginPath();ctx.moveTo(SLING.x-10,SLING.anchorY+2);ctx.lineTo(bp.x-3,bp.y+2);ctx.stroke();}
 }
-function drawSlingFront(birdDrawn){
+function drawSlingFront(){
   const bp=bandPoint();
   if(bp){ctx.strokeStyle='#3a250f';ctx.lineWidth=9;ctx.lineCap='round';
     ctx.beginPath();ctx.moveTo(SLING.x+10,SLING.anchorY+2);ctx.lineTo(bp.x+3,bp.y+2);ctx.stroke();}
@@ -891,10 +929,10 @@ function drawSlingFront(birdDrawn){
     ctx.beginPath();ctx.moveTo(SLING.x-10,SLING.anchorY+2);ctx.quadraticCurveTo(SLING.x,SLING.anchorY+30,SLING.x+10,SLING.anchorY+2);ctx.stroke();}
   slingWood(SLING.x+14,GROUND_Y+4,SLING.x+8,SLING.anchorY,12);
 }
+
 /* ---------- 游戏世界绘制 ---------- */
 function queuePos(i){return{x:200-i*58,y:GROUND_Y}}
 function drawGame(){
-  const th=THEMES[G.theme];
   // 历史轨迹点
   for(const d of G.dots){
     ctx.fillStyle='rgba(255,255,255,.85)';ctx.beginPath();ctx.arc(d.x,d.y,4.2,0,TAU);ctx.fill();
@@ -903,12 +941,12 @@ function drawGame(){
   for(const b of G.blocks)if(!b.dead)drawBlock(b);
   for(const p of G.pigs)if(!p.dead)drawPig(p);
   drawSlingBack();
-  // 飞行中的鸟
+  // 飞行中的马娘
   for(const e of G.flock)if(!e.dead){
     const b=e.body;
     drawBird(e.type,b.position.x,b.position.y,b.angle,e.r,{fuse:e.type==='bomb'&&e.fuse>=0});
   }
-  // 弹弓上的鸟
+  // 弹弓上的马娘
   if(G.slingBird){
     const sb=G.slingBird;
     let x=SLING.x,y=SLING.anchorY,ang=Math.sin(G.t*.05)*.05;
@@ -916,13 +954,13 @@ function drawGame(){
       x=SLING.x+sb.drag.x;y=SLING.anchorY+sb.drag.y;
       ang=Math.atan2(SLING.anchorY-y,SLING.x-x);
     }
-    drawBird(sb.type,x,y,ang,BIRDS[sb.type].r,{blink:(G.t%240)<8});
+    drawBird(sb.type,x,y,ang,BIRDS[sb.type].r);
   }
   drawSlingFront();
-  // 等待队列
+  // 等待队列中的马娘
   for(let i=0;i<G.queue.length;i++){
     const t=G.queue[i],p=queuePos(i),bob=Math.sin(G.t*.07+i*1.8)*3;
-    drawBird(t,p.x,p.y-BIRDS[t].r-bob,0,BIRDS[t].r,{blink:((G.t+i*67)%260)<8});
+    drawBird(t,p.x,p.y-BIRDS[t].r-bob,0,BIRDS[t].r);
   }
   // 装填跳跃动画
   if(G.hop){
@@ -982,12 +1020,12 @@ function drawParticlesWorld(){
 }
 function drawMenuScene(){
   drawSlingBack();
-  drawBird('red',SLING.x,SLING.anchorY,0,24,{blink:(G.t%240)<8});
+  drawBird('red',SLING.x,SLING.anchorY,0,24);
   drawSlingFront();
   const q=['chuck','blue','bomb'];
   for(let i=0;i<q.length;i++){
     const bob=Math.sin(G.t*.06+i*1.7)*3;
-    drawBird(q[i],165-i*60,GROUND_Y-BIRDS[q[i]].r-bob,0,BIRDS[q[i]].r,{blink:((G.t+i*80)%260)<8});
+    drawBird(q[i],165-i*60,GROUND_Y-BIRDS[q[i]].r-bob,0,BIRDS[q[i]].r);
   }
   drawParticlesWorld();
 }
@@ -1065,7 +1103,7 @@ function pointerEnd(e){
   }
 }
 cv.addEventListener('pointerup',pointerEnd);
-cv.addEventListener('pointercancel',()=>{ptr.down=false;if(G.slingBird)G.slingBird.drag=null});
+cv.addEventListener('pointercancel',pointerEnd);
 cv.addEventListener('wheel',e=>{e.preventDefault();
   G.userZoom=clamp(G.userZoom*(e.deltaY>0?.92:1.08),.75,1.6)},{passive:false});
 cv.addEventListener('contextmenu',e=>e.preventDefault());
@@ -1101,7 +1139,7 @@ function showSelect(){
 }
 function renderSelect(){
   const list=$('#worldList');list.innerHTML='';
-  const meta=[{n:'青青草原',s:'草地上的初次相遇'},{n:'黄昏荒漠',s:'国王猪现身沙丘'},{n:'猪王夜堡',s:'决战之夜，灯火通明'}];
+  const meta=[{n:'特雷森草地',s:'初次遭遇摸鱼奇宝'},{n:'黄昏训练沙地',s:'奇宝国王现身沙丘'},{n:'奇宝夜间主场',s:'决战之夜，灯火通明'}];
   for(let w=0;w<3;w++){
     const row=document.createElement('div');row.className='wrow w'+w;
     let lv='';
@@ -1132,17 +1170,17 @@ function showTag(txt){const t=$('#tag');t.textContent=txt;t.classList.remove('go
 function updateHint(){
   const h=$('#hint');let msg='';
   if(G.state==='playing'){
-    if(G.level===0&&!G.everLaunched&&G.phase==='aim')msg='拖住小鸟向后拉，松手发射！';
+    if(G.level===0&&!G.everLaunched&&G.phase==='aim')msg='拖住马娘向后拉，松手发射！';
     else{
       const t=G.slingBird?G.slingBird.type:(G.flock.find(e=>!e.dead&&!e.skillUsed)||{}).type;
       if(t&&t!=='red'&&!save.seenSkill[t]){
-        msg=t==='chuck'?'黄风：点击屏幕加速冲刺！':t==='blue'?'蓝宝：点击屏幕分裂成三只！':'黑炮：点击屏幕引爆！';
+        msg=t==='chuck'?'米浴：点击屏幕加速冲刺！':t==='blue'?'内恰：点击屏幕分裂成三只！':'波旁：点击屏幕启动超负荷引爆！';
       }
     }
   }
   if(msg){h.textContent=msg;h.classList.add('on')}else h.classList.remove('on');
 }
-/* 按钮绑定（安全版：元素不存在时只警告，不中断脚本） */
+/* 按钮绑定 */
 const on=(sel,fn)=>{const el=document.querySelector(sel);if(el)el.addEventListener('click',fn);else console.warn('缺少元素:',sel)};
 on('#bPlay',()=>{sfx('click');showSelect()});
 on('#bBackMenu',()=>{sfx('click');showMenu()});
@@ -1159,10 +1197,9 @@ on('#bNext',()=>{sfx('click');if(G.level<5)startLevel(G.level+1);else showSelect
 on('#bSoundMenu',toggleSound);
 on('#bSoundP',toggleSound);
 /* 图标注入 */
- $('#bPause').innerHTML=ICONS.pause;$('#bRetry').innerHTML=ICONS.replay;
- $('#bBackMenu').innerHTML=ICONS.back;$('#bWinMenu').innerHTML=ICONS.home;
- $('#bWinRetry').innerHTML=ICONS.replay;$('#bLoseMenu').innerHTML=ICONS.home;
- $('#losePig').innerHTML='<div class="loseSprite" role="img" aria-label="得意的对手"></div>';
+$('#bPause').innerHTML=ICONS.pause;$('#bRetry').innerHTML=ICONS.replay;
+$('#bBackMenu').innerHTML=ICONS.back;$('#bWinMenu').innerHTML=ICONS.home;
+$('#bWinRetry').innerHTML=ICONS.replay;$('#bLoseMenu').innerHTML=ICONS.home;
 setSoundIcons();
 
 /* ================= 启动 ================= */
@@ -1186,9 +1223,7 @@ function loop(t){
   render();
   requestAnimationFrame(loop);
 }
-loadSprites().then(()=>{
-  $('#loading').remove();last=performance.now();requestAnimationFrame(loop);
-}).catch(error=>{$('#loading').textContent=error.message+'，请刷新重试。';console.error(error)});
+requestAnimationFrame(loop);
 </script>
 </body>
 </html>
