@@ -1,33 +1,13 @@
-const fs=require('node:fs');
-const path=require('node:path');
-const vm=require('node:vm');
-const assert=require('node:assert/strict');
-const root=path.resolve(__dirname,'..');
-const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
-const script=html.match(/<script>([\s\S]*?)<\/script>/)[1];
-const cutFn=(src,name)=>{const i=src.indexOf(name);return i<0?'':src.slice(i,src.indexOf('\n}',i)+2)};
-const drawCalls=[];
-const context=new Proxy({}, {get:(_,key)=>key==='drawImage'?((image)=>drawCalls.push(image.src)):key==='createLinearGradient'?(()=>({addColorStop(){}})):(()=>{}),set:()=>true});
-const listeners=new Map();
-const elements=new Map();
-function element(id){
-  return {style:{},dataset:{},textContent:'',innerHTML:'',
-    classList:{_s:new Set(),add(c){this._s.add(c)},remove(c){this._s.delete(c)},contains(c){return this._s.has(c)}},
-    addEventListener(type,fn){listeners.set(id+'|'+type,fn)},appendChild(){},remove(){},
-    querySelectorAll(){return [element(),element(),element()]},getContext(){return context},
-    getBoundingClientRect(){return {left:0,top:0,width:1280,height:720}},
-    setPointerCapture(){},dispatchEvent(){return true}};
-}
-const sandbox={console,Math,Map,Set,Promise,performance,innerWidth:1280,innerHeight:720,devicePixelRatio:1,
- Matter:require('../vendor/matter.min.js'),localStorage:{getItem(){return null},setItem(){}},
- document:{querySelector(id){if(!elements.has(id))elements.set(id,element(id));return elements.get(id)},createElement:element,body:element('#body'),addEventListener(){}},
- Image:class {set src(value){assert.ok(fs.existsSync(path.join(root,value)),value);this._src=value;this.complete=true;this.naturalWidth=512;this.naturalHeight=512;queueMicrotask(()=>{if(typeof this.onload==='function')this.onload()})}get src(){return this._src}},
- requestAnimationFrame(){},setTimeout(){},addEventListener(){},__listeners:listeners};
-sandbox.window=sandbox;
-vm.createContext(sandbox);vm.runInContext(script,sandbox);
-(async()=>{
- await new Promise(resolve=>setImmediate(resolve));
- vm.runInContext(`
+const harness = require('./harness.cjs');
+const assert = require('node:assert/strict');
+const { cutFn } = harness;
+(async () => {
+  const sandbox = harness.boot();
+  await harness.tick();
+  const drawCalls = sandbox.__drawCalls;
+  const script = sandbox.__source;
+  const html = sandbox.__html;
+  harness.run(sandbox, `
  const fire=(type,x,y,id)=>{const fn=__listeners.get('#cv|'+type);if(!fn)throw Error('missing listener '+type);fn({clientX:x,clientY:y,pointerId:id,preventDefault(){}})};
  const w2s=(wx,wy)=>({x:(wx-G.cam.x)*G.cam.z+cw/2,y:(wy-G.cam.y)*G.cam.z+ch/2});
  const dragOff=(px,py)=>{const d=(G.slingBird&&G.slingBird.drag)||{x:0,y:0},m=toWorld(px,py);return Math.hypot(SLING_REST.x+d.x-m.x,SLING_REST.y+d.y-m.y)};
@@ -145,16 +125,21 @@ vm.createContext(sandbox);vm.runInContext(script,sandbox);
  if(G.phase!=='ui')throw Error('Expected win ui phase: '+G.phase);
  if(!document.querySelector('#lose').classList.contains('hidden'))throw Error('Lose panel is still visible after winning');
  if(document.querySelector('#win').classList.contains('hidden'))throw Error('Win panel missing after clear');
- `,sandbox);
- for(const src of ['initial','accelerate','split','boom'])assert.ok(drawCalls.includes('media/birds/'+src+'.png'));
- for(const src of ['pig_normal','pig_hurt','King_normal','King_hurt'])assert.ok(drawCalls.includes('media/pigs/'+src+'.png'));
- assert.ok(!script.includes('function drawEye('));
- assert.ok(!script.includes('function slingWood('),'old slingshot drawing should be removed');
- const front=cutFn(script,'function drawSlingFront');
- assert.ok(front&&!front.includes('slingLimb'),'front layer must not draw wood over the uma');
- const back=cutFn(script,'function drawSlingBack');
- assert.ok(back.includes('SLING_TIP.l')&&back.includes('SLING_TIP.r'),'both forks must be drawn behind the uma');
- assert.ok(html.trimEnd().endsWith('</html>'));
- const levelCount=(script.match(/\{world:/g)||[]).length;
- console.log('PASS: syntax, 8 assets, '+levelCount+' levels (stable with new hitboxes), 8 drawImage variants, 3 skills, clear->next level (incl. out-of-bounds pig & lose-panel override), drag follows pointer (no grab offset), camera locked, no accidental tap-launch, slingshot rest lifted.');
-})().catch(error=>{console.error(error);process.exitCode=1});
+ if(typeof REG!=='object'||typeof matDef!=='function'||typeof regMat!=='function'||typeof regSkin!=='function'||typeof registerExplosive!=='function'||typeof registerPropType!=='function'||typeof registerProp!=='function'||typeof registerItem!=='function'||typeof registerLevels!=='function'||typeof refreshCounts!=='function'||typeof restoreSnapshot!=='function'||typeof renderItemBar!=='function')throw Error('registry seams missing');
+ if(matDef('wood')!==MATS.wood)throw Error('matDef must fall back to built-in MATS');
+ if(G.props.length||G.pendingBoom.length||G.armedItem||!G.snapshot)throw Error('base per-level registry state not clean: props/pendingBoom/armedItem/snapshot');
+ startLevel(0);
+ if(Object.keys(G.items).some(k=>G.items[k]!==(REG.items[k].uses!=null?REG.items[k].uses:1)))throw Error('item uses not re-armed on createLevel');
+ `);
+  for(const src of ['initial', 'accelerate', 'split', 'boom']) assert.ok(drawCalls.includes('media/birds/' + src + '.png'));
+  for(const src of ['pig_normal', 'pig_hurt', 'King_normal', 'King_hurt']) assert.ok(drawCalls.includes('media/pigs/' + src + '.png'));
+  assert.ok(!script.includes('function drawEye('));
+  assert.ok(!script.includes('function slingWood('), 'old slingshot drawing should be removed');
+  const front = cutFn(script, 'function drawSlingFront');
+  assert.ok(front && !front.includes('slingLimb'), 'front layer must not draw wood over the uma');
+  const back = cutFn(script, 'function drawSlingBack');
+  assert.ok(back.includes('SLING_TIP.l') && back.includes('SLING_TIP.r'), 'both forks must be drawn behind the uma');
+  assert.ok(html.trimEnd().endsWith('</html>'));
+  const levelCount = (script.match(/\{world:/g) || []).length;
+  console.log('PASS: syntax, 8 assets, ' + levelCount + ' levels (stable with new hitboxes), 8 drawImage variants, 3 skills, clear->next level (incl. out-of-bounds pig & lose-panel override), drag follows pointer (no grab offset), camera locked, no accidental tap-launch, slingshot rest lifted.');
+})().catch(error => { console.error(error); process.exitCode = 1 });
