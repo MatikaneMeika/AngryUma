@@ -66,3 +66,19 @@
 
 - **环境清理（收口后）**：合并专用 worktree `../AngryUma-wt/M` 已 `git worktree remove` + `prune`；验收 server(8081) 已停。C worktree `../AngryUma-wt/C`（feat/items @ a1ff530）保留待 C 会话自行收尾；主工作区仍为 B 的 feat/world 现场（f74eebc），A 未越权。tag 链：`base`(aeda50f) → `v1.0.0`(48e2f97，发布提交)；main tip 为本条 docs 记录。
 - **发布态浏览器验收**：`dev/logs/release-v1.0.0.md`（14 脚本链同场加载、console 零消息、L9 真实拖射得分 15600、闹钟 SL 读档复活 13 实体、画布像素采样 9728/9728 非零；原生截图受窗口 hidden 限制，位图参考 `accept-01-load.png`）。
+- **发布后推送**：`main` → `71d04a7..ec1ae48`（快进），tag `v1.0.0` / `base` / `checkpoint/pre-refactor` 已上远端；`feat/world`、`feat/items` 有意未推。
+
+## A 诊断记录（v1.0.1 立项）
+
+用户反馈"道具除芭菲放大与闹钟外看不到其他效果"→ 用 `dev/logs/items-balance-probe.cjs`（新增，vm sandbox 清场纯弹道测量）取量化证据，结论：**接缝全部正常，问题在增益量级、技能派生实体不继承增益、HUD 遮挡**。
+
+| 项 | 实测 | 归属 |
+| --- | --- | --- |
+| 内恰吃芭菲后分裂 | 母体 r 16→20，子体 r=13 且 `tank=false`（`30-engine.js:227` 硬编码 13） | A-01/A-02 |
+| 蹄铁远投 | 首落地 +75px（+4.6%）、总距 +8.7%；预测线误差仅 4px（模型正确） | C-01 |
+| 炒面暴走 | 平均漂移 +22px（≈0）、sd 166px：脉冲正负对称，注释声称的"单调漂移"未实现 | C-02 |
+| 道具消耗无反馈 | `armedItem` 发射即清空，仅计数 -1 | A-04 |
+| 道具栏遮挡 | `bottom:84px` + 56px 按钮 ⇒ 压住视口底部 84~140px | A-05 |
+| 默认解锁全关卡 | `save.unlocked=save.unlocked\|\|1` | A-06 |
+
+修正计划已下发：`dev/FIX-PLAN-A-01.md`（角色 A 修改计划 01）、`dev/FIX-PLAN-C-01.md`（角色 C 修改计划 01）；平衡性闸门在 v1.0.0 上为 **4 FAIL / 2 PASS**，两计划完成时须全绿。
