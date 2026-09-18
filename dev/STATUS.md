@@ -32,7 +32,7 @@
 3. **[扩展点已登记] `registerLevels → refreshCounts()`**：任务书签名之外新增，动态扩关后派生常量与 save 槽位自动补齐（CONTRACTS §3）。
 4. **[语义细化已登记] `restoreSnapshot()` 末尾**：有剩余鸟 → `loading→loadNextBird()`（回瞄准态），否则 `waitClear`；C 时间系道具按此语义接入（CONTRACTS §2）。
 5. **[待观察] onHit 第三参 `rel`**：核心传入相对速度，B 现有 2 参 handler 兼容；若 B/C 需要更上下文化的回调，走规则 2 登记由 A 演进。
-6. **[C 登记 → C 侧已补正] `restoreSnapshot()` 复活语义不完整**：`if(r.dead){ent.dead=false;Composite.add(...)}` 只复活"快照时就已死"的实体；对"快照时活着、发射后被杀"的 block/pig（闹钟 SL 的典型回滚场景）不翻转 `ent.dead`、不加回 world。C 未改核心，已在 `feat-items-time.js` 的 `alarm.arm()` 内于 `restoreSnapshot()` 后用公开句柄补齐复活（幂等）。**建议 A 收口时把语义统一进核心**：对快照记录 `!r.dead` 的实体强制 `ent.dead=false` + 条件 `Composite.add`，随后可删除 C 的补偿循环。
+6. **[C 登记 → C 侧已补正] `restoreSnapshot()` 复活语义不完整**：`if(r.dead){ent.dead=false;Composite.add(...)}` 只复活"快照时就已死"的实体；对"快照时活着、发射后被杀"的 block/pig（闹钟 SL 的典型回滚场景）不翻转 `ent.dead`、不加回 world。C 未改核心，已在 `feat-items-time.js` 的 `alarm.arm()` 内于 `restoreSnapshot()` 后用公开句柄补齐复活（幂等）。**建议 A 收口时把语义统一进核心**：对快照记录 `!r.dead` 的实体强制 `ent.dead=false` + 条件 `Composite.add`，随后可删除 C 的补偿循环。**【A 收口闭环 ✅ v1.0.0：核心已统一为 `if(ent.dead)` 复活判定，feat-items 转绿确认；C 补偿现为空操作】**
 
 ## A 阶段5/6完成记录
 
@@ -54,4 +54,12 @@
   - 浏览器实测（localhost:8082 + browser-use）：道具栏 4 按钮+角标、四道具行为逐项核验、控制台零报错；证据 `dev/logs/items-c.md` + 3 张截图。
   - 改动仅限 C 独占文件（`src/feat-items-uma.js`、`src/feat-items-time.js`、`tests/feat-items.cjs`、`dev/logs/items-c.*`、本文件追加条目）；未合并 main、未打 tag，等 A 收口。
   - 接缝缺口 1 项已登记（上方第 6 条，C 侧已幂等补正）。注：`npm test`（run-all）当前因 B 的 `feat-scene.cjs` 红灯非零退出，与 C 无关。
+
+## A 收口记录（v1.0.0 发布）
+
+- **B ready 补记**：feat/world @ 主工作区（HEAD f74eebc），5 个提交仅限 B 所有权文件（6 个 src 槽位 + tests/feat-scene.cjs），无越权；其分支树与主工作区最终一致。
+- **合并**：`merge feat/world`（6 槽位 add/add 冲突按清单取 B 侧 `--theirs`）→ `merge feat/items`（自动合并零冲突，STATUS.md 双方追加共存）。合并于专用 worktree `../AngryUma-wt/M` 执行，未扰动主工作区 B 现场。
+- **收口补缝（A 核心）**：`restoreSnapshot()` 复活判定 `if(r.dead)` → `if(ent.dead)` 统一（缺口 #6 闭环）；合入后 `npm test` 3/3 全绿（smoke + feat-scene + feat-items）。C 的 alarm 补偿循环现为幂等空操作，C 可在后续提交自行删除。
+- **产出**：`dev/CHANGELOG.md` 新建、README 增补玩法与项目结构、CONTRACTS §2 快照语义更新、INTEGRATION-CHECKLIST 勾选。
+- **账本关闭**：tag `v1.0.0` 打在合并后的 main；worktree 清理（`git worktree remove` M/C；B 分支留主工作区待 B 会话自行收尾）归用户择机执行。
 

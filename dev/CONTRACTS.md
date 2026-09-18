@@ -69,7 +69,8 @@ snapshot:null,   // createLevel 预沉降后的世界快照
 ### 快照接缝（时间系道具用，30-engine）
 
 - `takeSnapshot()`：记录 block/pig 的 pos/angle/vel/av/hp/dead + `queue/score`。
-- `restoreSnapshot()`：回滚上述状态、重建已死实体、清 flock/dots/floaters/pendingBoom；
+- `restoreSnapshot()`：回滚上述状态、复活实体、清 flock/dots/floaters/pendingBoom；
+  **收口统一（v1.0.0）**：复活判定为 `if(ent.dead)`——快照时已死、或快照后本次被杀的 block/pig 一律 `ent.dead=false` 并 `Composite.add` 加回 world（C 登记的缺口 #6 已进核心，feat-items-time 的补偿循环成为幂等空操作，C 可在后续提交删除）；
   **扩展语义**：末尾若有剩余鸟则 `phase='loading'→loadNextBird()`（重新装填回到瞄准态），否则进 `waitClear`。C 按此语义使用，勿依赖 phase 恒为 `'aim'`。
 
 ## 3. 派生常量与存档（20-data）

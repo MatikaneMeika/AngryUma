@@ -333,7 +333,7 @@ function restoreSnapshot(){
   G.flock=[];
   for(const r of S.ents){
     const ent=r.ent,b=ent.body;
-    if(r.dead){ent.dead=false;Composite.add(world,b)}
+    if(ent.dead){ent.dead=false;Composite.add(world,b)} // 统一复活：快照时已死 或 快照后本次被杀
     Body.setPosition(b,{x:r.x,y:r.y});
     Body.setAngle(b,r.angle);
     Body.setVelocity(b,{x:r.vx,y:r.vy});

@@ -35,6 +35,23 @@
    - 包含拉弓形变、尾迹轨迹线、羽毛消散、火花爆裂、金币与加分浮动动效。
    - 自动适配各种手机触屏与 PC 浏览器（支持鼠标滚轮缩放与拖拽视口）。
 4. **Web Audio 合成音效**：纯原生合成音效，无需外部繁重音频文件，即点即响。
+5. **世界机关与连锁**（v1.0 新增）：胡萝卜箱连锁爆炸、泥地/冰面/上坡/下坡区域、断绳轮胎、引力饭盆、三层以上复合建筑。
+6. **道具栏**（v1.0 新增）：每关各 1 次的 4 种马娘道具——绝好调芭菲🍮（霸体强袭）、决胜蹄铁🐴（远投+预测弹道）、闹钟 SL 读档⏰（一键回滚本发）、黄金船炒面🍝（弹道暴走）。
+
+---
+
+## 🗂 项目结构（模块化 · 零构建）
+
+```
+index.html            壳（HUD + 14 项有序 script 链，file:// 可直开）
+src/00..50-*.js       核心：boot/registry/data/引擎/渲染/UI（角色 A）
+src/feat-*/level-*/…  玩法注册槽位（角色 B/C，只经 REG 接缝接入）
+tests/                harness.cjs + smoke/feat-scene/feat-items（npm test）
+dev/                  CONTRACTS/OWNERSHIP/STATUS/CHANGELOG/集成清单与验收证据
+```
+
+- 本地测试：`npm test`（自动发现 `tests/feat-*.cjs`）；`npm run test:smoke` 单跑基线闸门。
+- 新玩法接入规范见 `dev/CONTRACTS.md`（注册 API 签名冻结）。
 
 ---
 
