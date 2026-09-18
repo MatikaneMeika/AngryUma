@@ -44,7 +44,10 @@ const SAVE_KEY='ab_html_save_v1';
 let save;
 try{save=JSON.parse(localStorage.getItem(SAVE_KEY))||{}}catch(e){save={}}
 save.stars=Array.isArray(save.stars)?save.stars:[0,0,0,0,0,0];
-save.unlocked=save.unlocked||1;
+/* 演示/体验开关：true = 默认解锁全部关卡（关掉即恢复逐关解锁进度制）
+ * 注意：开启时 persist() 会把 unlocked 写满，日后改回 false 需清 localStorage 才恢复进度。 */
+const UNLOCK_ALL=true;
+save.unlocked=save.unlocked||(UNLOCK_ALL?999:1);
 save.sound=save.sound!==false;
 save.seenSkill=save.seenSkill||{};
 function persist(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(save))}catch(e){}}

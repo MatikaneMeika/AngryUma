@@ -121,7 +121,7 @@ function renderSelect(){
     for(let k=0;k<PER;k++){
       const idx=w*PER+k,unlocked=idx<save.unlocked,st=save.stars[idx];
       const stars=[0,1,2].map(i=>`<svg viewBox="0 0 24 24" class="${i<st?'on':''}"><path d="${STAR_PATH}"/></svg>`).join('');
-      lv+=`<div class="lvl ${unlocked?'':'locked'} ${idx===save.unlocked-1&&unlocked?'fresh':''}" data-lv="${idx}">
+      lv+=`<div class="lvl ${unlocked?'':'locked'} ${idx===save.unlocked-1&&unlocked&&!UNLOCK_ALL?'fresh':''}" data-lv="${idx}">
         <div class="circ">${unlocked?idx+1:'<svg viewBox="0 0 24 24"><path d="M12 2a5 5 0 0 0-5 5v3H5v12h14V10h-2V7a5 5 0 0 0-5-5zm-3 8V7a3 3 0 0 1 6 0v3H9z"/></svg>'}</div>
         <div class="st">${stars}</div></div>`;
     }

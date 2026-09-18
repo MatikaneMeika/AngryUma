@@ -133,5 +133,6 @@ function refreshCounts(){
   while(save.stars.length<NLEVELS)save.stars.push(0);
   save.stars.length=NLEVELS;
   save.unlocked=clamp(save.unlocked,1,NLEVELS);
+  if(UNLOCK_ALL)save.unlocked=NLEVELS; // 全解锁开关：旧存档进度为 3 之类也要覆盖
 }
 refreshCounts();
