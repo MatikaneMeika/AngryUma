@@ -32,6 +32,7 @@
 3. **[扩展点已登记] `registerLevels → refreshCounts()`**：任务书签名之外新增，动态扩关后派生常量与 save 槽位自动补齐（CONTRACTS §3）。
 4. **[语义细化已登记] `restoreSnapshot()` 末尾**：有剩余鸟 → `loading→loadNextBird()`（回瞄准态），否则 `waitClear`；C 时间系道具按此语义接入（CONTRACTS §2）。
 5. **[待观察] onHit 第三参 `rel`**：核心传入相对速度，B 现有 2 参 handler 兼容；若 B/C 需要更上下文化的回调，走规则 2 登记由 A 演进。
+6. **[C 登记 → C 侧已补正] `restoreSnapshot()` 复活语义不完整**：`if(r.dead){ent.dead=false;Composite.add(...)}` 只复活"快照时就已死"的实体；对"快照时活着、发射后被杀"的 block/pig（闹钟 SL 的典型回滚场景）不翻转 `ent.dead`、不加回 world。C 未改核心，已在 `feat-items-time.js` 的 `alarm.arm()` 内于 `restoreSnapshot()` 后用公开句柄补齐复活（幂等）。**建议 A 收口时把语义统一进核心**：对快照记录 `!r.dead` 的实体强制 `ent.dead=false` + 条件 `Composite.add`，随后可删除 C 的补偿循环。
 
 ## A 阶段5/6完成记录
 
@@ -44,3 +45,13 @@
 ## 安全提示（义务登记，不代为处置）
 
 - `origin` remote URL 内嵌**明文 GitHub PAT**（`ghp_...`）。建议用户尽快在 GitHub 撤销/轮换该 token，并改用凭证管理器；A 不 push、不修改 remote 配置。
+
+## 角色完工登记
+
+- **C ready**（feat/items @ worktree `../AngryUma-wt/C`，base `aeda50f`）：
+  - 四道具经 `registerItem` 全部落地：绝好调芭菲 🍨（tank 霸体+刚体×1.25）、决胜蹄铁 🐴（frictionAir 0.0008→0.00015+瞄准预测弹道）、闹钟 SL ⏰（即时型 `restoreSnapshot` 读档）、黄金船炒面 🍜（飞行随机横向暴走+碎屑）。
+  - `node tests/feat-items.cjs` 绿（TDD：先红 13 项→实现转绿）；`node tests/smoke.cjs` 仍绿。
+  - 浏览器实测（localhost:8082 + browser-use）：道具栏 4 按钮+角标、四道具行为逐项核验、控制台零报错；证据 `dev/logs/items-c.md` + 3 张截图。
+  - 改动仅限 C 独占文件（`src/feat-items-uma.js`、`src/feat-items-time.js`、`tests/feat-items.cjs`、`dev/logs/items-c.*`、本文件追加条目）；未合并 main、未打 tag，等 A 收口。
+  - 接缝缺口 1 项已登记（上方第 6 条，C 侧已幂等补正）。注：`npm test`（run-all）当前因 B 的 `feat-scene.cjs` 红灯非零退出，与 C 无关。
+
