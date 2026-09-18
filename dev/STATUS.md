@@ -65,3 +65,4 @@
 
 
 - **环境清理（收口后）**：合并专用 worktree `../AngryUma-wt/M` 已 `git worktree remove` + `prune`；验收 server(8081) 已停。C worktree `../AngryUma-wt/C`（feat/items @ a1ff530）保留待 C 会话自行收尾；主工作区仍为 B 的 feat/world 现场（f74eebc），A 未越权。tag 链：`base`(aeda50f) → `v1.0.0`(48e2f97，发布提交)；main tip 为本条 docs 记录。
+- **发布态浏览器验收**：`dev/logs/release-v1.0.0.md`（14 脚本链同场加载、console 零消息、L9 真实拖射得分 15600、闹钟 SL 读档复活 13 实体、画布像素采样 9728/9728 非零；原生截图受窗口 hidden 限制，位图参考 `accept-01-load.png`）。
