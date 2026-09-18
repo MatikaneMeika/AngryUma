@@ -7,6 +7,7 @@
 - [ ] `git merge feat/world` → main(base)
 - [ ] `git merge feat/items` → main
 - [ ] 若出现任何冲突：核对 OWNERSHIP.md，确认是否有角色越权改了非己文件；越权改动回退到对应角色的注册实现
+- [ ] 已知预期冲突：B 实际分支 `feat/world` 从 checkpoint 而非 base 切出，与 base 对 `src/21-levels-w2w3/feat-carrot/feat-zones/level-zones/feat-contraptions/level-contraptions` 六个槽位为 add/add（base=空桩，B=真实代码）→ 一律取 B 侧（`git checkout --theirs`），详见 STATUS"base 落点与分支拓扑说明"
 
 ## 2. 跨模块重点核对（合并后逐项人工过一遍）
 

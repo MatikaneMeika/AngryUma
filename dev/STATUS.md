@@ -11,8 +11,14 @@
 | A-3 注册表接缝 | ✅ | 17 处核心调用点落地（30-engine×12、40-render×4、50-ui-input×1）；无注册时行为与基线等价 |
 | A-4 测试基座 | ✅ | `tests/harness.cjs`（boot() 返回 context，兼容 feat-* 用法）；smoke 断言零缩水 + 新增接缝断言；`tests/run-all.cjs` 总入口 |
 | A-5 服务 | ✅ | server.js 通配静态路由已覆盖 `src/*.js` 与 `media/**`（全 `.png`，MIME 表完备），**无需改动** |
-| `node tests/smoke.cjs` | ✅ 绿 | A 闸门（行为零差异证据） |
-| tag `base` + worktree B/C | ⏳ 阶段6 | 见下方"待办" |
+| `node tests/smoke.cjs` | ✅ 绿 | A 闸门（行为零差异证据）；纯 base 树（C worktree）内复验同样全绿 |
+| tag `base` + worktree B/C | ✅ | `base`=`aeda50f`（parent 为 checkpoint，纯平台基座）；`main`→base；C worktree `../AngryUma-wt/C`（`feat/items`@base）已建；B worktree 未建——`feat/world` 分支被主工作区的 B 会话占用（git 拒绝双 checkout，A 不抢占），B 如需隔离 worktree 自行 `git worktree add ../AngryUma-wt/B feat/world`（前提：主工作区切离该分支） |
+
+## base 落点与分支拓扑说明
+
+- 并发事实：B 会话直接把主工作区 checkout 到了自建的 `feat/world` 分支（基于 checkpoint，5 个提交只动 B 所有权文件，无越权）。A 的首个 base 提交一度误落在 feat/world 顶端，已用 plumbing（commit-tree 换父 + update-ref）修正：feat/world 原样归还 B，base 挂在 checkpoint 之上，`main`→base。主工作区 HEAD 仍在 feat/world@f74eebc，工作区文件零改动。
+- 收口合并预期冲突：`feat/world` 与 `main(base)` 对 B 的 6 个 src 槽位文件为 add/add（base 侧=空桩，B 侧=真实代码）→ 合并时**取 B 侧**（`--theirs`），其余不相交自动合并。已列入 INTEGRATION-CHECKLIST §1。
+- 主工作区残留 untracked：A 的壳/核心文件在 feat/world 视角下为未跟踪（内容即 base 版本，运行/smoke 不受影响）；B 提交时请只 add 自有文件（其至今纪律良好）。
 
 ## 并发会话事实记录
 
@@ -27,13 +33,13 @@
 4. **[语义细化已登记] `restoreSnapshot()` 末尾**：有剩余鸟 → `loading→loadNextBird()`（回瞄准态），否则 `waitClear`；C 时间系道具按此语义接入（CONTRACTS §2）。
 5. **[待观察] onHit 第三参 `rel`**：核心传入相对速度，B 现有 2 参 handler 兼容；若 B/C 需要更上下文化的回调，走规则 2 登记由 A 演进。
 
-## A 待办（阶段5/6）
+## A 阶段5/6完成记录
 
-- [ ] 删除 dev/ 一次性工具：`split-once.cjs`、`finish-shell.cjs`、`apply-seams.cjs`（阶段5 前，diff 审查证据已留存于会话记录）。
-- [ ] 浏览器验收：`node server.js` + browser-use，加载/进关/拖射/切关，`list_console_messages` 零报错，截图留证。
-- [ ] CodeReview 子代理审查拆分与接缝（纯搬运红线、processDamage 连锁、行为等价）。
-- [ ] base 提交（仅 A 文件 + 重建空桩）→ tag `base` → `git worktree add ../AngryUma-wt/B -b feat/world`、`../AngryUma-wt/C -b feat/items`（工作区外目录，需沙箱权限）。
-- [ ] 更新本文件：base 落点、B/C 可开工状态。
+- [x] dev/ 一次性工具已删除：`split-once.cjs`、`finish-shell.cjs`、`apply-seams.cjs`。
+- [x] 浏览器验收：`node server.js`(8081) + browser-use——14 脚本链+8 媒体全 200、console 零消息、进关/拖射/切关/接缝状态断言通过，证据 `dev/logs/integration.md` + `accept-01-load.png`（后续截图受窗口最小化限制，改用状态断言留证）。
+- [x] CodeReview 子代理：零 Critical/Major，结论"可合入 base"（纯搬运/连锁等价/500→matDef().score 等价经基线 MATS 证实；两条 Minor 为接缝语义说明，已同步 CONTRACTS）。
+- [x] base 提交 → tag `base`(aeda50f)、`main`→base、C worktree `feat/items` 建好并复验 smoke 绿；B worktree 受阻于分支占用（见上）。
+- [x] 本文件已更新 base 落点与 B/C 可开工状态。
 
 ## 安全提示（义务登记，不代为处置）
 
