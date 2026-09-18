@@ -66,6 +66,14 @@ function spawnBirdBody(type,x,y,vx,vy,rOverride){
   body.gd=ent;G.flock.push(ent);Composite.add(world,body);return ent;
 }
 function removeBird(ent){if(ent.dead)return;ent.dead=true;try{Composite.remove(world,ent.body)}catch(e){}}
+/* 派生实体继承道具增益（分裂/召唤等"由旧实体造新实体"的技能统一调用）
+ * 新增一种增益字段，只需在这里加一行；尺寸缩放由调用方按 r 比例自行处理。 */
+function inheritBuffs(src,dst){
+  if(src.tank)dst.tank=true;                                        // 绝好调芭菲：霸体（applyHitRules 读 ea.tank）
+  if(src.chaos)dst.chaos=src.chaos;                                  // 黄金船炒面：暴走标记（onFlightStep 按实体筛选）
+  if(src.shoe)dst.shoe=src.shoe;                                     // 决胜蹄铁：远投标记
+  if(src.body.frictionAir!==0.0008)dst.body.frictionAir=src.body.frictionAir; // 蹄铁低摩擦
+}
 
 /* ================= 伤害系统 ================= */
 function pushDamage(ent,dmg){const cur=G.damageBuf.get(ent)||0;if(dmg>cur)G.damageBuf.set(ent,dmg)}
@@ -221,11 +229,13 @@ function triggerSkill(){
     b.dashT=22;fx('ring',b.body.position.x,b.body.position.y,1,{s:14});sfx('skill');
   }else if(b.type==='blue'){ // 内恰分裂成三只
     const p=b.body.position,v=b.body.velocity,sp=Math.hypot(v.x,v.y);
+    const k=b.scaleK||b.r/BIRDS.blue.r; // 母体当前缩放系数：吃芭菲=1.25，无道具=1（子体基准 13 保持原版手感）
     removeBird(b);fx('puff',p.x,p.y,4,{s:7});
     for(let i=-1;i<=1;i++){
       const a=Math.atan2(v.y,v.x)+i*.17;
-      const e=spawnBirdBody('blue',p.x+i*4,p.y+i*22,Math.cos(a)*sp,Math.sin(a)*sp,13);
+      const e=spawnBirdBody('blue',p.x+i*4*k,p.y+i*22*k,Math.cos(a)*sp,Math.sin(a)*sp,13*k);
       e.skillUsed=true;
+      inheritBuffs(b,e); // 霸体/暴走/远投等增益随母体传下去
     }
     sfx('split');
   }else if(b.type==='bomb'){ // 波旁超负荷引爆
@@ -294,6 +304,10 @@ function launch(p,vx,vy){
     const it=REG.items[G.armedItem];
     if(it.onLaunch)it.onLaunch(ent);
     G.items[G.armedItem]=Math.max(0,(G.items[G.armedItem]||0)-1);
+    if(!it.quiet){ // 统一消耗反馈：让玩家看得见"这一发用了什么"；def.quiet=true 可关闭
+      G.floaters.push({x:ent.body.position.x,y:ent.body.position.y-46,txt:(it.icon||'')+' '+(it.label||it.name||G.armedItem),t:0});
+      sfx('skill');
+    }
     G.armedItem=null;
     renderItemBar();
   }
