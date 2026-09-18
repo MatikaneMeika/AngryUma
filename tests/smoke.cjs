@@ -33,7 +33,7 @@ vm.createContext(sandbox);vm.runInContext(script,sandbox);
  const dragOff=(px,py)=>{const d=(G.slingBird&&G.slingBird.drag)||{x:0,y:0},m=toWorld(px,py);return Math.hypot(SLING_REST.x+d.x-m.x,SLING_REST.y+d.y-m.y)};
  for(const k of ['birds','pigs'])if(Object.values(IMAGES[k]).some(s=>!s.src))throw Error('Missing sprite');
  if(SLING_REST.y>=SLING.anchorY)throw Error('Sling rest point must sit above the anchor');
- for(let i=0;i<6;i++){
+ for(let i=0;i<LEVELS.length;i++){
    const defs=LEVELS[i].pigs.map(p=>({x:p.x,y:p.y}));
    startLevel(i);
    for(let j=0;j<150;j++)step();
@@ -155,5 +155,6 @@ vm.createContext(sandbox);vm.runInContext(script,sandbox);
  const back=cutFn(script,'function drawSlingBack');
  assert.ok(back.includes('SLING_TIP.l')&&back.includes('SLING_TIP.r'),'both forks must be drawn behind the uma');
  assert.ok(html.trimEnd().endsWith('</html>'));
- console.log('PASS: syntax, 8 assets, 6 levels (stable with new hitboxes), 8 drawImage variants, 3 skills, clear->next level (incl. out-of-bounds pig & lose-panel override), drag follows pointer (no grab offset), camera locked, no accidental tap-launch, slingshot rest lifted.');
+ const levelCount=(script.match(/\{world:/g)||[]).length;
+ console.log('PASS: syntax, 8 assets, '+levelCount+' levels (stable with new hitboxes), 8 drawImage variants, 3 skills, clear->next level (incl. out-of-bounds pig & lose-panel override), drag follows pointer (no grab offset), camera locked, no accidental tap-launch, slingshot rest lifted.');
 })().catch(error=>{console.error(error);process.exitCode=1});
