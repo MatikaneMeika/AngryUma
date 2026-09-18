@@ -82,3 +82,9 @@
 | 默认解锁全关卡 | `save.unlocked=save.unlocked\|\|1` | A-06 |
 
 修正计划已下发：`dev/FIX-PLAN-A-01.md`（角色 A 修改计划 01）、`dev/FIX-PLAN-C-01.md`（角色 C 修改计划 01）；平衡性闸门在 v1.0.0 上为 **4 FAIL / 2 PASS**，两计划完成时须全绿。
+
+### A 段执行完毕（v1.0.1）
+
+TDD 先红后绿，新增 `tests/feat-platform.cjs`。已完成 A-01（分裂子体 `13×母体缩放`，实测 16.25）、A-02（核心 `inheritBuffs` 传递 tank/chaos/shoe/摩擦）、A-04（道具消耗统一飘字+音效，`quiet` 可关）、A-05（道具栏贴底 14px、按钮 48px、`#hint` 上移让位、窄视口降级）、A-06（`UNLOCK_ALL` 默认全解锁，16 格 0 锁 0 误高亮）。
+闸门：`run-all` **4/4 全绿**（既有 smoke/feat-items/feat-scene 零回归）；探针 P1 两条转 PASS，P2/P3 仍 FAIL = **等 C-01/C-02**。CONTRACTS 已登记 `label/quiet/scaleK` 与 `triggerSkill` 继承行。
+细节与未取证项见 `dev/FIX-PLAN-A-01.md` 第五节（含"选关网格疑点被实测否定"的自我纠正）。

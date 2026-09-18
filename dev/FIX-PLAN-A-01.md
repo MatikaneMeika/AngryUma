@@ -127,3 +127,25 @@ if(G.armedItem&&REG.items[G.armedItem]){
 - 提交拆分：`fix(engine): 分裂继承母体缩放与道具增益` / `fix(ui): 道具栏贴底避让画面` / `feat(save): 默认解锁全部关卡` / `docs: CONTRACTS+CHECKLIST`
 - commit message 保持单行短小（环境钩子限制），不推送、不打 tag（由收口时统一决定 v1.0.1）
 - 与 C 的并行约定：A-01/A-02 的 `inheritBuffs` 是本计划与 `dev/FIX-PLAN-C-01.md` 的**唯一共享前置**；C 不得自行改 `30-engine.js` 来绕开它
+
+## 五、执行结果（A 段已完成）
+
+TDD 路径：先写 `tests/feat-platform.cjs` 取红灯（`期望 r=16.25，实测 [13,13,13]`），再实施，转绿。
+
+| 项 | 实施 | 实测证据 |
+| --- | --- | --- |
+| A-01 | `triggerSkill` blue 分支改为 `13*k`（`k = b.scaleK \|\| b.r/BIRDS.blue.r`），间距同步 ×k | 浏览器：母 `r20/cr22.5` → 三子体 **`r=16.25 / hitR=18.28 / circleRadius=18.28`** |
+| A-02 | 新增核心 `inheritBuffs(src,dst)`（`tank`/`chaos`/`shoe`/非默认 `frictionAir`） | 浏览器：三子体 `tank=true`；探针 P1 两条 FAIL → **PASS** |
+| A-04 | `launch()` 消耗块统一飘字 `图标+label/name` + `sfx('skill')`，`def.quiet` 可关 | 测试：`newFloaters≥1`、文案含 `🍨 芭菲`、计数归零、`armedItem=null` |
+| A-05 | `#itemBar bottom 84→14px`、`.itemBtn 56→48px`、`#hint 24→70px` 让位、新增 `@media (max-height:620px)` 降级 | 浏览器：道具栏 `btnW=48`、**距底 14px**（遮挡带由 84~140px 降到 14~62px）、`hintOverlapsBar=false` |
+| A-06 | `00-boot` 新增 `UNLOCK_ALL`、`refreshCounts` 强制覆盖旧存档进度、选关页 `fresh` 条件加 `&&!UNLOCK_ALL` | 浏览器：`tileCount=16 / locked=0 / fresh=0 / 最后格=16`、`save.unlocked=16=NLEVELS` |
+
+闸门：`node tests/run-all.cjs` → **ALL TESTS PASSED (4)**（smoke、feat-items、feat-platform、feat-scene，既有测试零回归）；
+`node dev/logs/items-balance-probe.cjs` → P1 两条转 PASS，**P2（蹄铁 ≥12%）、P3（炒面漂移 ≥250px）仍 FAIL，属 C-01/C-02 未完成**，符合本计划预期分工。
+浏览器 console 零 error / 零 game-side warning（唯一 warn 由探针自身 `getImageData` 触发）。
+
+两点如实登记：
+1. **横向居中无法在本环境取证**：预览窗口 hidden 且 `innerWidth=1`，`transform:translateX(-50%)` 的道具栏 `left` 为负值属测量环境所致而非缺陷；纵向遮挡带（本次修的目标）测量有效。
+2. **选关网格疑点经实测否定**：曾疑 `PER=Math.round(NLEVELS/WORLDS)` 只给 15 格，实测 `THEMES.length=4 ⇒ WORLDS=4, PER=4 ⇒ 16 格、missingIdx=[]`，**无缺陷**，不改。
+
+契约同步：`dev/CONTRACTS.md` §1 文件表未变；§2 `registerItem` 增补可选字段 `label`/`quiet`/`scaleK`；§3 接缝表 `launch()` 行为更新并新增 `triggerSkill` 继承行。

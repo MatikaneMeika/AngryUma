@@ -37,6 +37,8 @@ function registerExplosive(mat, h)       // h = {onDetonate(x,y)}；destroyBlock
 function registerPropType(t, h)          // h = {make,inZone,applyStep,draw,onHit}
 function registerProp(idx, cfg)          // 关卡下标 → propPatches[idx] 收集，createLevel 装配
 function registerItem(id, def)           // def = {name,icon,uses,enabled,arm,onLaunch,onFlightStep,onAimDraw}
+                                         // 可选：label:string（消耗飘字文案，缺省用 name）、quiet:true（关闭核心统一消耗反馈）、
+                                         //       scaleK:number（onLaunch 若改变本发刚体尺寸，须同时写入该字段供派生实体继承）
 function registerLevels(start, arr)      // 写 LEVELS 后调用 refreshCounts()（扩展点，见 §3）
 ```
 
@@ -51,9 +53,10 @@ function registerLevels(start, arr)      // 写 LEVELS 后调用 refreshCounts()
 | `collisionStart` | 任一 body 为 prop → `REG.propTypes[type].onHit(prop, otherBody, rel)`（**扩展：附带第三参 rel 相对速度**，不写第三参的旧 handler 兼容） | 不触发 |
 | `createLevel` | 复位 `G.props/pendingBoom/armedItem/snapshot` → 装配 `propPatches[i]`（`T.make(cfg)`，刚体须 `body.gd={kind:'prop',prop}`）→ `G.items` 按各注册 `uses` 重置 → 预沉降+血量复位后 `G.snapshot=takeSnapshot()` → `REG.afterCreate` 逐个 `fn(i)` → `renderItemBar()` | 空转 |
 | `step()` | Engine.update 后逐 prop `applyStep(pr)`；flight 分支逐 item `onFlightStep()` | 空数组空转 |
-| `launch()` | `spawnBirdBody` 后若 `G.armedItem`：`it.onLaunch(ent)`、`G.items[id]--`（钳 0）、`G.armedItem=null`、`renderItemBar()` | 不触发 |
+| `launch()` | `spawnBirdBody` 后若 `G.armedItem`：`it.onLaunch(ent)`、`G.items[id]--`（钳 0）、除非 `it.quiet` 否则推入 `图标+label/name` 飘字并 `sfx('skill')`、`G.armedItem=null`、`renderItemBar()` | 不触发 |
 | `drawBlock` | 底框 `matDef(ent.mat).fill/edge`；结尾 `REG.skins[ent.mat]?.(ent)` | 同基线 |
 | `drawGame` | 逐 prop `T.draw(pr)`；aim 阶段逐 item `onAimDraw()` | 空转 |
+| `triggerSkill`（分裂等派生技能） | 新实体半径按母体 `scaleK \|\| r/BIRDS[type].r` 等比缩放，并调用核心 `inheritBuffs(母,子)` 传递 `tank`/`chaos`/`shoe`/非默认 `frictionAir` | 无道具时子体尺寸与原版一致 |
 | `renderItemBar`（50-ui） | 据 `REG.items`+`G.items` 渲染 `#itemBar` 按钮/`.cnt` 角标/`.armed` 态，点击 `def.arm()`（left>0 且 enabled!==false）；`REG.items` 为空时 `#itemBar` 保持 hidden | 隐藏 |
 
 ### G 新增字段（30-engine，供 B/C 只读/按语义使用）
