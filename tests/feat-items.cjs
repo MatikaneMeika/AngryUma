@@ -94,9 +94,9 @@ const ok = (cond, msg) => { if (!cond) FAILS.push(msg); };
     ok(Math.abs(p1.x-rec.x)<0.51&&Math.abs(p1.y-rec.y)<0.51,'积木应回到快照位：'+p1.x.toFixed(2)+','+p1.y.toFixed(2)+' vs '+rec.x.toFixed(2)+','+rec.y.toFixed(2));
     ok(G.pigs[0].dead===false,'猪应被复活');
     ok(G.pigs[0].hp===G.pigs[0].maxHp,'复活血量应满：'+G.pigs[0].hp);
-    ok(G.queue.length===queueBefore,'队列应恢复为快照长度 '+queueBefore+'，实际 '+G.queue.length);
     for(let i=0;i<120;i++)step();
     ok(G.phase==='aim','读档装填后应回到 aim，实际 '+G.phase);
+    ok(G.queue.length+(G.slingBird?1:0)===queueBefore,'装填完成后至 队列+弹弓 应恢复为快照长度 '+queueBefore+'，实际 '+(G.queue.length+(G.slingBird?1:0)));
     REG.items.alarm.arm();                   // 次数已尽再按：不得崩溃、不得再生效
     ok(G.items.alarm===0,'alarm 次数用尽后保持 0');
     }
