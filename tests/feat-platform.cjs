@@ -79,6 +79,38 @@ const harness = require('./harness.cjs');
       NLEVELS: NLEVELS
     };
 
+    /* ---------- A-07 闹钟 SL 只回退最近一发（快照锚点=每次 launch 前；快照前已毁实体不得复活） ---------- */
+    createLevel(8);                       // birds: ['bomb','red','bomb','chuck']
+    G.state = 'playing';
+    for(const x of [...G.props]) try{Composite.remove(world,x.body)}catch(e){}
+    G.props=[];                           // 去机关干扰，保留建筑/猪
+    for(let j=0;j<200;j++) step();        // 进入 aim
+    /* 模拟"上一发战果"：碎一个独立落地玻璃块 + 杀一头猪 → 这些处于快照时的 dead 态，回溯后必须保持 */
+    destroyBlock(G.blocks.find(b=>!b.dead && b.mat==='glass'));
+    killPig(G.pigs.find(p=>!p.dead && p.type!=='k'));
+    const anchor={score:G.score, blocksDead:G.blocks.filter(b=>b.dead).length, pigsAlive:G.pigs.filter(p=>!p.dead).length};
+    /* 第 2 发：发射（30 步短程不撞任何建筑）→ 击杀另一头猪 → 回收上膛 */
+    const shot2=G.slingBird&&G.slingBird.type;
+    launch({ x: SLING_REST.x, y: SLING_REST.y }, 13, -9);
+    for(let j=0;j<30;j++) step();
+    for(const e of [...G.flock]) try{Composite.remove(world,e.body)}catch(_){}
+    G.flock=[]; G.phase='aim';
+    killPig(G.pigs.find(p=>!p.dead && p.type!=='k'));  // 本发战果：回溯后应复活
+    loadNextBird();
+    for(let j=0;j<90 && !G.slingBird;j++) step();
+    G.items.alarm = 1;
+    REG.items.alarm.arm();                // 按时钟：只撤销第 2 发
+    for(let j=0;j<200;j++) step();        // 沉降观察期：不得有二次坍塌计分
+    R.alarm = {
+      shot2, anchor,
+      score: G.score,
+      sling: G.slingBird && G.slingBird.type,
+      blocksDead: G.blocks.filter(b=>b.dead).length,
+      pigsAlive: G.pigs.filter(p=>!p.dead).length,
+      left: G.queue.length + (G.slingBird ? 1 : 0),
+      alarmCnt: G.items.alarm
+    };
+
     /* ---------- 常量回读（便于人工核对断言基准） ---------- */
     R.consts = { blue_r: BIRDS.blue.r, blue_hit: BIRDS.blue.hit, kid_base: 13,
                  bird_frictionAir: 0.0008, GROUND_Y: GROUND_Y, SLING_REST: SLING_REST };
@@ -113,6 +145,21 @@ const harness = require('./harness.cjs');
     'A-04 飘字应包含道具图标与名称，实测 "' + R.consume.text + '"');
   A.equal(R.consume.left, 0, 'A-04 消耗后计数应归零');
   A.equal(R.consume.armed, null, 'A-04 消耗后 armedItem 应清空');
+
+  /* A-07：闹钟只重置最近一发，不是整关从 0 开始；快照前战果不得被反悔 */
+  A.ok(R.alarm && R.alarm.shot2 === 'bomb',
+    'A-07 前置：第 2 发应为 bomb，实测 ' + JSON.stringify(R.alarm && R.alarm.shot2));
+  A.equal(R.alarm.score, R.alarm.anchor.score,
+    'A-07 回溯后分数应精确停在锚点 ' + R.alarm.anchor.score + '（整关重置=0，二次坍塌>锚点），实测 ' + R.alarm.score);
+  A.equal(R.alarm.sling, R.alarm.shot2,
+    'A-07 被撤销那一发应回到弹弓（' + R.alarm.shot2 + '），实测 ' + R.alarm.sling);
+  A.equal(R.alarm.left, 4,
+    'A-07 回溯后剩余鸟总数应为 4（被撤销一发归还），实测 ' + R.alarm.left);
+  A.equal(R.alarm.blocksDead, R.alarm.anchor.blocksDead,
+    'A-07 快照前已碎的块必须保持碎裂态（不得空中重建），实测 dead=' + R.alarm.blocksDead + ' 期望 ' + R.alarm.anchor.blocksDead);
+  A.equal(R.alarm.pigsAlive, R.alarm.anchor.pigsAlive,
+    'A-07 快照前已杀的猪保持死亡、本发击杀的猪应复活，实测存活 ' + R.alarm.pigsAlive + ' 期望 ' + R.alarm.anchor.pigsAlive);
+  A.equal(R.alarm.alarmCnt, 0, 'A-07 闹钟自身次数应正常扣到 0');
 
   /* A-06：默认全解锁 */
   A.equal(R.unlock.flag, true, 'A-06 应定义 UNLOCK_ALL 开关且为 true，实测 ' + R.unlock.flag);
