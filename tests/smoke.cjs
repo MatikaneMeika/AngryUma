@@ -12,6 +12,7 @@ const { cutFn } = harness;
  const w2s=(wx,wy)=>({x:(wx-G.cam.x)*G.cam.z+cw/2,y:(wy-G.cam.y)*G.cam.z+ch/2});
  const dragOff=(px,py)=>{const d=(G.slingBird&&G.slingBird.drag)||{x:0,y:0},m=toWorld(px,py);return Math.hypot(SLING_REST.x+d.x-m.x,SLING_REST.y+d.y-m.y)};
  for(const k of ['birds','pigs'])if(Object.values(IMAGES[k]).some(s=>!s.src))throw Error('Missing sprite');
+ if(THEMES.some(t=>t.bg===undefined||!IMAGES.bg[t.bg]||!IMAGES.bg[t.bg].src))throw Error('Missing theme background asset');
  if(SLING_REST.y>=SLING.anchorY)throw Error('Sling rest point must sit above the anchor');
  for(let i=0;i<LEVELS.length;i++){
    const defs=LEVELS[i].pigs.map(p=>({x:p.x,y:p.y}));
@@ -141,5 +142,5 @@ const { cutFn } = harness;
   assert.ok(back.includes('SLING_TIP.l') && back.includes('SLING_TIP.r'), 'both forks must be drawn behind the uma');
   assert.ok(html.trimEnd().endsWith('</html>'));
   const levelCount = (script.match(/\{world:/g) || []).length;
-  console.log('PASS: syntax, 8 assets, ' + levelCount + ' levels (stable with new hitboxes), 8 drawImage variants, 3 skills, clear->next level (incl. out-of-bounds pig & lose-panel override), drag follows pointer (no grab offset), camera locked, no accidental tap-launch, slingshot rest lifted.');
+  console.log('PASS: syntax, 8 sprites + 4 theme backgrounds, ' + levelCount + ' levels (stable with new hitboxes), 8 drawImage variants, 3 skills, clear->next level (incl. out-of-bounds pig & lose-panel override), drag follows pointer (no grab offset), camera locked, no accidental tap-launch, slingshot rest lifted.');
 })().catch(error => { console.error(error); process.exitCode = 1 });
