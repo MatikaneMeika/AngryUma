@@ -88,3 +88,10 @@
 TDD 先红后绿，新增 `tests/feat-platform.cjs`。已完成 A-01（分裂子体 `13×母体缩放`，实测 16.25）、A-02（核心 `inheritBuffs` 传递 tank/chaos/shoe/摩擦）、A-04（道具消耗统一飘字+音效，`quiet` 可关）、A-05（道具栏贴底 14px、按钮 48px、`#hint` 上移让位、窄视口降级）、A-06（`UNLOCK_ALL` 默认全解锁，16 格 0 锁 0 误高亮）。
 闸门：`run-all` **4/4 全绿**（既有 smoke/feat-items/feat-scene 零回归）；探针 P1 两条转 PASS，P2/P3 仍 FAIL = **等 C-01/C-02**。CONTRACTS 已登记 `label/quiet/scaleK` 与 `triggerSkill` 继承行。
 细节与未取证项见 `dev/FIX-PLAN-A-01.md` 第五节（含"选关网格疑点被实测否定"的自我纠正）。
+
+## 任务书 B2 下发记录（2026-09-19）
+
+- 审查发现两处断层：① 场景机关（zones/contraptions）全部集中在 index 8-15，第 3 关~第 8 关零道具；② `LEVELS[2..7]` 仍为世界 0/1 原始 1-3 层简单结构，与 B-1 世界 2/3 复合建筑复杂度断层。
+- 基线取证：`main`@262fae3 上 `node tests/run-all.cjs` 四闸门全绿（smoke / feat-items / feat-platform / feat-scene）。
+- 修正任务书已下发：`dev/TASK-BRIEF-B2-scene-props-r2.md`（角色 B，新分支 `feat/world-r2`）。要点：道具自 idx 2 起梯度覆盖（bowl 不上探 ≤7）、`registerLevels(2,[...])` 加密 idx 2-7 至 3-4 层并把 carrot 引入到 idx 6+、feat-scene 扩展覆盖与稳定性断言。全部改动限定在 B 所有权文件与已冻结接缝内，无需核心配合。
+- 等待 B 自测绿后登记 "B2 ready"，由本角色收口合并评审；B 分支照旧不 push。
