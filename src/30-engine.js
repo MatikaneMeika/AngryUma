@@ -295,6 +295,7 @@ function loadNextBird(){
   G.phase='loading';sfx('hop');
 }
 function launch(p,vx,vy){
+  G.snapshot=takeSnapshot(); // 每发起飞前刷新回溯锚点：时间系道具（闹钟）只撤销最近一发，而非整关重来
   const type=G.slingBird.type;G.slingBird=null;
   G.dots=[];G.stillT=0;G.flightT=0;G.phase='flight';G.everLaunched=true;
   G.slingRel={x:p.x,y:p.y};G.slingSnap=1;
@@ -338,7 +339,7 @@ function takeSnapshot(){
     const b=ent.body;
     ents.push({ent,x:b.position.x,y:b.position.y,angle:b.angle,vx:b.velocity.x,vy:b.velocity.y,av:b.angularVelocity,hp:ent.hp,dead:ent.dead,hurt:!!ent.hurt});
   }
-  return {ents,queue:[...G.queue],score:G.score};
+  return {ents,queue:(G.slingBird?[G.slingBird.type,...G.queue]:[...G.queue]),score:G.score}; // 手中鸟计入队列：回溯后该发重新上膛
 }
 function restoreSnapshot(){
   if(!G.snapshot)return;
@@ -347,7 +348,9 @@ function restoreSnapshot(){
   G.flock=[];
   for(const r of S.ents){
     const ent=r.ent,b=ent.body;
-    if(ent.dead){ent.dead=false;Composite.add(world,b)} // 统一复活：快照时已死 或 快照后本次被杀
+    /* 快照时已毁（上一发的战果）：保持销毁态，不得空中重建引发二次坍塌 */
+    if(r.dead){if(!ent.dead){ent.dead=true;try{Composite.remove(world,b)}catch(err){}}continue;}
+    if(ent.dead){ent.dead=false;Composite.add(world,b)} // 快照后本发被杀/被碎：复活并归位
     Body.setPosition(b,{x:r.x,y:r.y});
     Body.setAngle(b,r.angle);
     Body.setVelocity(b,{x:r.vx,y:r.vy});
