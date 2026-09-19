@@ -10,6 +10,17 @@ function drawSky(th){
   g.addColorStop(0,th.sky[0]);g.addColorStop(1,th.sky[1]);
   ctx.fillStyle=g;ctx.fillRect(0,0,cw,ch);
 }
+/* 背景图整屏 cover 铺底（屏幕空间静态，底部对齐，水平居中裁切） */
+function drawBgImage(img){
+  const iw=img.naturalWidth||img.width,ih=img.naturalHeight||img.height;
+  const s=Math.max(cw/iw,ch/ih),w=iw*s,h=ih*s;
+  ctx.drawImage(img,(cw-w)/2,ch-h,w,h);
+}
+/* 主题背景图是否就绪（vm 测试环境 Image 桩无 complete → 自然回退程序化渲染） */
+function themeBgReady(th){
+  const img=th.bg!==undefined?IMAGES.bg[th.bg]:null;
+  return img&&img.complete&&(img.naturalWidth||img.width)>0?img:null;
+}
 function drawHillsLayer(th,layer,par){
   ctx.save();ctx.translate(G.cam.x*(1-par),0);
   ctx.fillStyle=layer===0?th.hillFar:th.hillNear;
@@ -413,16 +424,13 @@ function drawMenuScene(){
 }
 function render(){
   const th=THEMES[G.state==='menu'||G.state==='select'?0:G.theme];
-  drawSky(th);
-  if(th.night)drawStars();
-  drawCelestial(th);
+  const bgImg=themeBgReady(th);
+  if(bgImg)drawBgImage(bgImg);
+  else{drawSky(th);if(th.night)drawStars();drawCelestial(th);}
   ctx.save();
   const sx=G.shake>0.4?rand(-G.shake,G.shake):0,sy=G.shake>0.4?rand(-G.shake,G.shake):0;
   ctx.translate(cw/2,ch/2);ctx.scale(G.cam.z,G.cam.z);ctx.translate(-G.cam.x+sx,-G.cam.y+sy);
-  drawClouds(th);
-  drawHillsLayer(th,0,.12);
-  drawHillsLayer(th,1,.28);
-  drawMidLayer(th,.5);
+  if(!bgImg){drawClouds(th);drawHillsLayer(th,0,.12);drawHillsLayer(th,1,.28);drawMidLayer(th,.5);}
   drawGround(th);
   if(G.state==='menu'||G.state==='select')drawMenuScene();
   else if(G.state==='playing'||G.state==='paused')drawGame();

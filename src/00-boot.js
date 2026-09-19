@@ -26,15 +26,25 @@ const ASSET_SOURCES={
     pig_hurt:'media/pigs/pig_hurt.png',
     King_normal:'media/pigs/King_normal.png',
     King_hurt:'media/pigs/King_hurt.png'
-  }
+  },
+  /* 四世界背景图（与 THEMES 下标对齐：草地/沙地/夜场/游泳馆） */
+  bg:[
+    'background/1.png',
+    'background/2.png',
+    'background/3.png',
+    'background/4.png'
+  ]
 };
-const IMAGES={birds:{},pigs:{}};
+const IMAGES={birds:{},pigs:{},bg:[]};
 function preloadAssets(){
   for(const[k,src]of Object.entries(ASSET_SOURCES.birds)){
     const img=new Image();img.src=src;IMAGES.birds[k]=img;
   }
   for(const[k,src]of Object.entries(ASSET_SOURCES.pigs)){
     const img=new Image();img.src=src;IMAGES.pigs[k]=img;
+  }
+  for(let i=0;i<ASSET_SOURCES.bg.length;i++){
+    const img=new Image();img.src=ASSET_SOURCES.bg[i];IMAGES.bg[i]=img;
   }
 }
 preloadAssets();

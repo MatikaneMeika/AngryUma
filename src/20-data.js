@@ -19,10 +19,11 @@ const BIRDS={
 /* 奇宝猪的贴图/碰撞体积（调整血量使碎裂坍塌积木可有效砸碎奇宝，彻底杜绝死活判定bug） */
 const PIG={r:26,hit:29,density:.0022,hp:36,king:{r:50,hit:57,density:.002,hp:130}};
 const THEMES=[
-  {name:'特雷森草地',sky:['#79cdf4','#eaf8fd'],hillFar:'#c4e9b0',hillNear:'#a2d98b',ground:'#8a5a33',grass:'#6fbf44',grass2:'#57a835',cloud:'rgba(255,255,255,.92)',mid:'bush',sun:{x:.78,y:-210,r:56,c:'#ffdf6b',glow:'rgba(255,235,150,.28)'}},
-  {name:'黄昏训练沙地',sky:['#f29a52','#ffe4ad'],hillFar:'#f0cd98',hillNear:'#e5b478',ground:'#c08345',grass:'#dca75f',grass2:'#c78c42',cloud:'rgba(255,240,215,.75)',mid:'cactus',sun:{x:.28,y:20,r:88,c:'#ff8a3d',glow:'rgba(255,150,70,.3)'}},
-  {name:'奇宝夜间主场',sky:['#131c3d','#3d4d84'],hillFar:'#25315e',hillNear:'#1b2547',ground:'#3a2f28',grass:'#3f6d49',grass2:'#325840',cloud:'rgba(70,85,140,.4)',mid:'castle',sun:{x:.76,y:-190,r:64,c:'#f2e6c4',glow:'rgba(245,235,200,.2)'},night:true},
-  {name:'特雷森游泳馆',sky:['#bfeefb','#f3feff'],hillFar:'#a9dfe8',hillNear:'#8fd0dd',ground:'#cdd6da',grass:'#4bbfd6',grass2:'#2ea3bd',cloud:'rgba(255,255,255,.7)',mid:'pool',sun:{x:.5,y:-230,r:70,c:'#ffffff',glow:'rgba(255,255,255,.35)'},pool:true}
+  /* bg=IMAGES.bg 下标（背景图优先）；配色字段保留作图片未就绪时的程序化降级 fallback */
+  {name:'特雷森草地',bg:0,sky:['#79cdf4','#eaf8fd'],hillFar:'#c4e9b0',hillNear:'#a2d98b',ground:'#8a5a33',grass:'#6fbf44',grass2:'#57a835',cloud:'rgba(255,255,255,.92)',mid:'bush',sun:{x:.78,y:-210,r:56,c:'#ffdf6b',glow:'rgba(255,235,150,.28)'}},
+  {name:'黄昏训练沙地',bg:1,sky:['#f29a52','#ffe4ad'],hillFar:'#f0cd98',hillNear:'#e5b478',ground:'#c08345',grass:'#dca75f',grass2:'#c78c42',cloud:'rgba(255,240,215,.75)',mid:'cactus',sun:{x:.28,y:20,r:88,c:'#ff8a3d',glow:'rgba(255,150,70,.3)'}},
+  {name:'奇宝夜间主场',bg:2,sky:['#131c3d','#3d4d84'],hillFar:'#25315e',hillNear:'#1b2547',ground:'#3a2f28',grass:'#3f6d49',grass2:'#325840',cloud:'rgba(70,85,140,.4)',mid:'castle',sun:{x:.76,y:-190,r:64,c:'#f2e6c4',glow:'rgba(245,235,200,.2)'},night:true},
+  {name:'特雷森游泳馆',bg:3,sky:['#bfeefb','#f3feff'],hillFar:'#a9dfe8',hillNear:'#8fd0dd',ground:'#cdd6da',grass:'#4bbfd6',grass2:'#2ea3bd',cloud:'rgba(255,255,255,.7)',mid:'pool',sun:{x:.5,y:-230,r:70,c:'#ffffff',glow:'rgba(255,255,255,.35)'},pool:true}
 ];
 /* 关卡搭建辅助：P=竖柱 Beam=横梁 Box=方块 NP/KP=普通奇宝猪/国王奇宝猪（全部奇宝均放置于建筑内视野完全可见位置） */
 const P=(x,m)=>({x,y:515,w:20,h:90,m});
